@@ -1,7 +1,7 @@
 export const TermPage = () => {
   return (
     <article className="px-2 pb-16 leading-relaxed md:px-4 md:pt-2">
-      <h1 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-3xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h1 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-3xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         利用規約
       </h1>
 
@@ -9,7 +9,7 @@ export const TermPage = () => {
         この利用規約（以下、「本規約」といいます。）は、株式会社&nbsp;架空の会社（以下、「当社」といいます。）がこのウェブサイト上で提供するサービス（以下、「本サービス」といいます。）の利用条件を定めるものです。登録ユーザーの皆さま（以下、「ユーザー」といいます。）には、本規約に従って、本サービスをご利用いただきます。
       </p>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第1条（適用）
       </h2>
       <ol className="list-decimal pl-8">
@@ -24,7 +24,7 @@ export const TermPage = () => {
         </li>
       </ol>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第2条（利用登録）
       </h2>
       <ol className="list-decimal pl-8">
@@ -41,7 +41,7 @@ export const TermPage = () => {
         </li>
       </ol>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第3条（ユーザーIDおよびパスワードの管理）
       </h2>
       <ol className="list-decimal pl-8">
@@ -56,7 +56,7 @@ export const TermPage = () => {
         </li>
       </ol>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第4条（利用料金および支払方法）
       </h2>
       <ol className="list-decimal pl-8">
@@ -68,7 +68,7 @@ export const TermPage = () => {
         </li>
       </ol>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第5条（禁止事項）
       </h2>
       <p>ユーザーは、本サービスの利用にあたり、以下の行為をしてはなりません。</p>
@@ -115,7 +115,7 @@ export const TermPage = () => {
         <li>その他、当社が不適切と判断する行為</li>
       </ol>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第6条（本サービスの提供の停止等）
       </h2>
       <ol className="list-decimal pl-8">
@@ -135,7 +135,7 @@ export const TermPage = () => {
         </li>
       </ol>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第7条（著作権）
       </h2>
       <ol className="list-decimal pl-8">
@@ -150,7 +150,7 @@ export const TermPage = () => {
         </li>
       </ol>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第8条（利用制限および登録抹消）
       </h2>
       <ol className="list-decimal pl-8">
@@ -174,12 +174,12 @@ export const TermPage = () => {
         </li>
       </ol>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第9条（退会）
       </h2>
       <p>ユーザーは、当社の定める退会手続により、本サービスから退会できるものとします。</p>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第10条（保証の否認および免責事項）
       </h2>
       <ol className="list-decimal pl-8">
@@ -197,42 +197,42 @@ export const TermPage = () => {
         </li>
       </ol>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第11条（サービス内容の変更等）
       </h2>
       <p>
         当社は、ユーザーに通知することなく、本サービスの内容を変更しまたは本サービスの提供を中止することができるものとし、これによってユーザーに生じた損害について一切の責任を負いません。
       </p>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第12条（利用規約の変更）
       </h2>
       <p>
         当社は、必要と判断した場合には、ユーザーに通知することなくいつでも本規約を変更することができるものとします。なお、本規約の変更後、本サービスの利用を開始した場合には、当該ユーザーは変更後の規約に同意したものとみなします。
       </p>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第13条（個人情報の取扱い）
       </h2>
       <p>
         当社は、本サービスの利用によって取得する個人情報については、当社「プライバシーポリシー」に従い適切に取り扱うものとします。
       </p>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第14条（通知または連絡）
       </h2>
       <p>
         ユーザーと当社との間の通知または連絡は、当社の定める方法によって行うものとします。当社は、ユーザーから、当社が別途定める方式に従った変更届け出がない限り、現在登録されている連絡先が有効なものとみなして当該連絡先へ通知または連絡を行い、これらは、発信時にユーザーへ到達したものとみなします。
       </p>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第15条（権利義務の譲渡の禁止）
       </h2>
       <p>
         ユーザーは、当社の書面による事前の承諾なく、利用契約上の地位または本規約に基づく権利もしくは義務を第三者に譲渡し、または担保に供することはできません。
       </p>
 
-      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[normal] font-bold scale-y-[1.43] origin-top">
+      <h2 className="mt-4 mb-2 font-['Noto_Serif_JP'] text-2xl leading-[0.6993] font-bold scale-y-[0.6993] origin-top">
         第16条（準拠法・裁判管轄）
       </h2>
       <ol className="list-decimal pl-8">
