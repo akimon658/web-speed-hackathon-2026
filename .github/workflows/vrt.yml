@@ -39,6 +39,14 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends ffmpeg
 
+      - name: Install Noto Serif JP font
+        run: |
+          mkdir -p ~/.local/share/fonts
+          curl -fsSL -o ~/.local/share/fonts/NotoSerifJP-VariableFont.ttf \
+            "https://github.com/google/fonts/raw/main/ofl/notoserifjp/NotoSerifJP%5Bwght%5D.ttf"
+          fc-cache -fv
+          fc-list | grep -i "Noto Serif JP" || (echo "ERROR: Noto Serif JP not found" && exit 1)
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
