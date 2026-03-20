@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { defineConfig, type Plugin } from "vite";
+import { visualizer } from "rollup-plugin-visualizer";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
 // Map of bare specifiers to resolved file paths for ?binary imports
@@ -10,6 +11,19 @@ const BINARY_ALIASES: Record<string, string> = {
   "@ffmpeg/core/wasm": path.resolve(__dirname, "node_modules/@ffmpeg/core/dist/umd/ffmpeg-core.wasm"),
   "@imagemagick/magick-wasm/magick.wasm": path.resolve(__dirname, "node_modules/@imagemagick/magick-wasm/dist/magick.wasm"),
 };
+
+function negaposiDictPlugin(): Plugin {
+  return {
+    name: "negaposi-dict-stub",
+    enforce: "pre",
+    resolveId(source) {
+      if (source.endsWith("pn_ja.dic.json")) {
+        return path.resolve(__dirname, "src/stubs/pn_ja.dic.json");
+      }
+      return null;
+    },
+  };
+}
 
 function binaryImportPlugin(): Plugin {
   return {
@@ -112,6 +126,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    negaposiDictPlugin(),
     binaryImportPlugin(),
     viteStaticCopy({
       targets: [
@@ -121,6 +136,17 @@ export default defineConfig({
         },
       ],
     }),
+    ...(process.env["BUNDLE_ANALYZE"] === "true"
+      ? [
+          visualizer({
+            filename: path.resolve(__dirname, "../dist/bundle-report.html"),
+            open: false,
+            gzipSize: true,
+            brotliSize: true,
+            template: "treemap",
+          }),
+        ]
+      : []),
   ],
   css: {
     postcss: "./postcss.config.js",

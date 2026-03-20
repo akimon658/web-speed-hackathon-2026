@@ -1,0 +1,152 @@
+name: Bundle Analysis
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: bundle-analysis-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.14.0"
+          cache: pnpm
+          cache-dependency-path: |
+            head/application/pnpm-lock.yaml
+            base/application/pnpm-lock.yaml
+
+      # Build base branch (before)
+      - name: Install dependencies (base)
+        working-directory: base/application
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build client with analysis (base)
+        id: build-base
+        working-directory: base/application
+        continue-on-error: true
+        run: pnpm --filter @web-speed-hackathon-2026/client build
+        env:
+          BUNDLE_ANALYZE: "true"
+          NODE_ENV: production
+
+      - name: Preserve base report
+        run: |
+          mkdir -p reports
+          if [ -f base/application/dist/bundle-report.html ]; then
+            cp base/application/dist/bundle-report.html reports/base.html
+            echo "BASE_REPORT=true" >> $GITHUB_ENV
+          else
+            echo "BASE_REPORT=false" >> $GITHUB_ENV
+          fi
+
+      # Build PR branch (after)
+      - name: Install dependencies (head)
+        working-directory: head/application
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build client with analysis (head)
+        working-directory: head/application
+        run: pnpm --filter @web-speed-hackathon-2026/client build
+        env:
+          BUNDLE_ANALYZE: "true"
+          NODE_ENV: production
+
+      - name: Preserve head report
+        run: |
+          mkdir -p reports
+          cp head/application/dist/bundle-report.html reports/head.html
+
+      # Upload as artifacts
+      - name: Upload bundle reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-analysis-pr-${{ github.event.number }}
+          path: reports/
+          retention-days: 30
+
+      # Comment on PR
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = context.issue.number;
+            const runId = context.runId;
+            const hasBase = process.env.BASE_REPORT === 'true';
+            const artifactUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+
+            const lines = [
+              '## Bundle Analysis Report',
+              '',
+              `[Download reports](${artifactUrl}#artifacts) from the workflow run artifacts.`,
+              '',
+              '| Version | File |',
+              '|---------|------|',
+            ];
+
+            if (hasBase) {
+              lines.push('| **Base** (before) | `base.html` |');
+            } else {
+              lines.push('| **Base** (before) | _Not available (visualizer not configured on base branch)_ |');
+            }
+            lines.push('| **PR** (after) | `head.html` |');
+            lines.push('');
+            lines.push(`_Generated at commit ${context.sha.substring(0, 7)} · [Workflow run](${artifactUrl})_`);
+
+            const body = lines.join('\n');
+            const marker = '## Bundle Analysis Report';
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: prNumber,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.startsWith(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
