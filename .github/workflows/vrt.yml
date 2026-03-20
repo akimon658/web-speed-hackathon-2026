@@ -1,0 +1,225 @@
+name: Visual Regression Testing
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: vrt-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  vrt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.14.0"
+          cache: pnpm
+          cache-dependency-path: |
+            head/application/pnpm-lock.yaml
+            base/application/pnpm-lock.yaml
+
+      # --- Base branch: generate baseline snapshots ---
+      - name: Install dependencies (base)
+        working-directory: base/application
+        run: pnpm install --frozen-lockfile
+
+      - name: Build client (base)
+        working-directory: base/application
+        run: pnpm build
+        env:
+          NODE_ENV: production
+
+      - name: Install Playwright browsers (base)
+        working-directory: base/application
+        run: pnpm --filter @web-speed-hackathon-2026/e2e exec playwright install --with-deps chromium
+
+      - name: Generate baseline snapshots (base)
+        working-directory: base/application
+        run: |
+          pnpm start &
+          SERVER_PID=$!
+
+          # Wait for server to be ready
+          for i in $(seq 1 60); do
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+              echo "Server is ready"
+              break
+            fi
+            if [ $i -eq 60 ]; then
+              echo "Server failed to start"
+              kill $SERVER_PID 2>/dev/null || true
+              exit 1
+            fi
+            sleep 2
+          done
+
+          pnpm --filter @web-speed-hackathon-2026/e2e exec playwright test --update-snapshots || true
+
+          kill $SERVER_PID 2>/dev/null || true
+          wait $SERVER_PID 2>/dev/null || true
+        env:
+          E2E_WORKERS: "2"
+
+      # --- PR branch: run VRT against baseline ---
+      - name: Install dependencies (head)
+        working-directory: head/application
+        run: pnpm install --frozen-lockfile
+
+      - name: Build client (head)
+        working-directory: head/application
+        run: pnpm build
+        env:
+          NODE_ENV: production
+
+      - name: Install Playwright browsers (head)
+        working-directory: head/application
+        run: pnpm --filter @web-speed-hackathon-2026/e2e exec playwright install --with-deps chromium
+
+      - name: Copy baseline snapshots to head
+        run: |
+          # Copy generated baseline snapshots from base to head
+          find base/application/e2e/src -name "*-snapshots" -type d | while read dir; do
+            relative="${dir#base/application/e2e/}"
+            target="head/application/e2e/${relative}"
+            mkdir -p "$target"
+            cp -r "$dir"/* "$target"/ 2>/dev/null || true
+          done
+
+      - name: Run VRT (head)
+        id: vrt
+        working-directory: head/application
+        continue-on-error: true
+        run: |
+          pnpm start &
+          SERVER_PID=$!
+
+          # Wait for server to be ready
+          for i in $(seq 1 60); do
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+              echo "Server is ready"
+              break
+            fi
+            if [ $i -eq 60 ]; then
+              echo "Server failed to start"
+              kill $SERVER_PID 2>/dev/null || true
+              exit 1
+            fi
+            sleep 2
+          done
+
+          pnpm --filter @web-speed-hackathon-2026/e2e exec playwright test 2>&1 | tee vrt-result.txt
+          VRT_EXIT_CODE=${PIPESTATUS[0]}
+
+          kill $SERVER_PID 2>/dev/null || true
+          wait $SERVER_PID 2>/dev/null || true
+
+          if [ $VRT_EXIT_CODE -ne 0 ]; then
+            echo "vrt_failed=true" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "vrt_failed=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          E2E_WORKERS: "2"
+
+      - name: Upload VRT results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vrt-report-pr-${{ github.event.number }}
+          path: |
+            head/application/e2e/test-results/
+          retention-days: 30
+
+      - name: Comment on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = context.issue.number;
+            const runId = context.runId;
+            const vrtFailed = '${{ steps.vrt.outputs.vrt_failed }}' === 'true';
+            const vrtOutcome = '${{ steps.vrt.outcome }}';
+            const artifactUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+
+            let status;
+            if (vrtOutcome === 'success') {
+              status = '✅ No visual differences detected.';
+            } else if (vrtFailed) {
+              status = '⚠️ Visual differences detected! Please review the artifacts.';
+            } else {
+              status = '❌ VRT encountered an error. Check the workflow logs.';
+            }
+
+            const body = [
+              '## Visual Regression Test Results',
+              '',
+              status,
+              '',
+              `[View workflow run & download artifacts](${artifactUrl})`,
+              '',
+              'The `test-results/` artifact contains diff images for any visual changes.',
+              '',
+              `_Generated at commit ${context.sha.substring(0, 7)} · [Workflow run](${artifactUrl})_`,
+            ].join('\n');
+
+            const marker = '## Visual Regression Test Results';
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: prNumber,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.startsWith(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
