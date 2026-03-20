@@ -4,6 +4,7 @@ import { AspectRatioBox } from "@web-speed-hackathon-2026/client/src/components/
 import { FontAwesomeIcon } from "@web-speed-hackathon-2026/client/src/components/foundation/FontAwesomeIcon";
 import { SoundWaveSVG } from "@web-speed-hackathon-2026/client/src/components/foundation/SoundWaveSVG";
 import { useFetch } from "@web-speed-hackathon-2026/client/src/hooks/use_fetch";
+import { useInViewport } from "@web-speed-hackathon-2026/client/src/hooks/use_in_viewport";
 import { fetchBinary } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
 import { getSoundPath } from "@web-speed-hackathon-2026/client/src/utils/get_path";
 
@@ -12,7 +13,8 @@ interface Props {
 }
 
 export const SoundPlayer = ({ sound }: Props) => {
-  const { data, isLoading } = useFetch(getSoundPath(sound.id), fetchBinary);
+  const { ref: inViewRef, isInViewport } = useInViewport();
+  const { data, isLoading } = useFetch(getSoundPath(sound.id), fetchBinary, isInViewport);
 
   const blobUrl = useMemo(() => {
     return data !== null ? URL.createObjectURL(new Blob([data])) : null;
@@ -38,7 +40,7 @@ export const SoundPlayer = ({ sound }: Props) => {
   }, []);
 
   if (isLoading || data === null || blobUrl === null) {
-    return null;
+    return <div ref={inViewRef} className="h-full w-full" />;
   }
 
   return (

@@ -7,6 +7,7 @@ import { MouseEvent, RefCallback, useCallback, useId, useMemo, useState } from "
 import { Button } from "@web-speed-hackathon-2026/client/src/components/foundation/Button";
 import { Modal } from "@web-speed-hackathon-2026/client/src/components/modal/Modal";
 import { useFetch } from "@web-speed-hackathon-2026/client/src/hooks/use_fetch";
+import { useInViewport } from "@web-speed-hackathon-2026/client/src/hooks/use_in_viewport";
 import { fetchBinary } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
 
 interface Props {
@@ -23,7 +24,8 @@ export const CoveredImage = ({ src }: Props) => {
     ev.stopPropagation();
   }, []);
 
-  const { data, isLoading } = useFetch(src, fetchBinary);
+  const { ref: inViewRef, isInViewport } = useInViewport();
+  const { data, isLoading } = useFetch(src, fetchBinary, isInViewport);
 
   const imageSize = useMemo(() => {
     return data != null ? sizeOf(Buffer.from(data)) : { height: 0, width: 0 };
@@ -48,7 +50,7 @@ export const CoveredImage = ({ src }: Props) => {
   }, []);
 
   if (isLoading || data === null || blobUrl === null) {
-    return null;
+    return <div ref={inViewRef} className="h-full w-full" />;
   }
 
   const containerRatio = containerSize.height / containerSize.width;

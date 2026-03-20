@@ -9,6 +9,7 @@ interface ReturnValues<T> {
 export function useFetch<T>(
   apiPath: string,
   fetcher: (apiPath: string) => Promise<T>,
+  enabled = true,
 ): ReturnValues<T> {
   const [result, setResult] = useState<ReturnValues<T>>({
     data: null,
@@ -17,6 +18,10 @@ export function useFetch<T>(
   });
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     setResult(() => ({
       data: null,
       error: null,
@@ -39,7 +44,7 @@ export function useFetch<T>(
         }));
       },
     );
-  }, [apiPath, fetcher]);
+  }, [apiPath, fetcher, enabled]);
 
   return result;
 }
