@@ -164,19 +164,6 @@
   }
 }
 
-@font-face {
-  font-family: "Rei no Are Mincho";
-  font-display: swap;
-  src: local("Noto Serif JP"), local("Noto Serif CJK JP"), local("Source Han Serif JP");
-  font-weight: normal;
-}
-
-@font-face {
-  font-family: "Rei no Are Mincho";
-  font-display: swap;
-  src: local("Noto Serif JP"), local("Noto Serif CJK JP"), local("Source Han Serif JP");
-  font-weight: bold;
-}
 
 .font-awesome {
   height: 1em;
