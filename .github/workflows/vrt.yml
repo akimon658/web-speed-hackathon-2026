@@ -42,10 +42,10 @@ jobs:
       - name: Install Noto Serif JP font
         run: |
           mkdir -p ~/.local/share/fonts
-          curl -L -o /tmp/Noto_Serif_JP.zip "https://fonts.google.com/download?family=Noto+Serif+JP"
-          unzip -o /tmp/Noto_Serif_JP.zip -d ~/.local/share/fonts/NotoSerifJP
-          rm /tmp/Noto_Serif_JP.zip
+          curl -fsSL -o ~/.local/share/fonts/NotoSerifJP-VariableFont.ttf \
+            "https://github.com/google/fonts/raw/main/ofl/notoserifjp/NotoSerifJP%5Bwght%5D.ttf"
           fc-cache -fv
+          fc-list | grep -i "Noto Serif JP" || (echo "ERROR: Noto Serif JP not found" && exit 1)
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
