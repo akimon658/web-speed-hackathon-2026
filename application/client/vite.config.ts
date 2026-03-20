@@ -7,23 +7,9 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-function negaposiDictPlugin(): Plugin {
-  return {
-    name: "negaposi-dict-stub",
-    enforce: "pre",
-    resolveId(source) {
-      if (source.endsWith("pn_ja.dic.json")) {
-        return path.resolve(__dirname, "src/stubs/pn_ja.dic.json");
-      }
-      return null;
-    },
-  };
-}
-
 export default defineConfig(async () => {
   const plugins: Plugin[] = [
     tailwindcss(),
-    negaposiDictPlugin(),
     viteStaticCopy({
       targets: [
         {
@@ -76,10 +62,6 @@ export default defineConfig(async () => {
         {
           find: "bayesian-bm25",
           replacement: path.resolve(__dirname, "node_modules/bayesian-bm25/dist/index.js"),
-        },
-        {
-          find: /^kuromoji$/,
-          replacement: path.resolve(__dirname, "node_modules/kuromoji/build/kuromoji.js"),
         },
       ],
     },
