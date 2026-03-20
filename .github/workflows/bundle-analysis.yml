@@ -1,0 +1,173 @@
+name: Bundle Analysis
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: bundle-analysis-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.14.0"
+          cache: pnpm
+          cache-dependency-path: |
+            head/application/pnpm-lock.yaml
+            base/application/pnpm-lock.yaml
+
+      # Build base branch (before)
+      - name: Install dependencies (base)
+        working-directory: base/application
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build client with analysis (base)
+        id: build-base
+        working-directory: base/application
+        continue-on-error: true
+        run: pnpm --filter @web-speed-hackathon-2026/client build
+        env:
+          BUNDLE_ANALYZE: "true"
+          NODE_ENV: production
+
+      - name: Preserve base report
+        run: |
+          mkdir -p reports
+          if [ -f base/application/dist/bundle-report.html ]; then
+            cp base/application/dist/bundle-report.html reports/base.html
+            echo "BASE_REPORT=true" >> $GITHUB_ENV
+          else
+            echo "BASE_REPORT=false" >> $GITHUB_ENV
+          fi
+
+      # Build PR branch (after)
+      - name: Install dependencies (head)
+        working-directory: head/application
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build client with analysis (head)
+        working-directory: head/application
+        run: pnpm --filter @web-speed-hackathon-2026/client build
+        env:
+          BUNDLE_ANALYZE: "true"
+          NODE_ENV: production
+
+      - name: Preserve head report
+        run: |
+          mkdir -p reports
+          cp head/application/dist/bundle-report.html reports/head.html
+
+      # Create index page
+      - name: Create index page
+        run: |
+          if [ "$BASE_REPORT" = "true" ]; then
+            BASE_LINK='<li><a href="base.html">Base branch (before)</a></li>'
+          else
+            BASE_LINK='<li>Base branch report is not available (visualizer not configured on base branch)</li>'
+          fi
+          cat > reports/index.html << EOF
+          <!DOCTYPE html>
+          <html>
+          <head><title>Bundle Analysis - PR #${{ github.event.number }}</title></head>
+          <body>
+            <h1>Bundle Analysis for PR #${{ github.event.number }}</h1>
+            <ul>
+              ${BASE_LINK}
+              <li><a href="head.html">PR branch (after)</a></li>
+            </ul>
+          </body>
+          </html>
+          EOF
+
+      # Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./reports
+          destination_dir: pr/${{ github.event.number }}
+          keep_files: true
+
+      # Comment on PR
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = context.issue.number;
+            const baseUrl = `https://${owner}.github.io/${repo}/pr/${prNumber}`;
+            const hasBase = process.env.BASE_REPORT === 'true';
+
+            const lines = [
+              '## 📊 Bundle Analysis Report',
+              '',
+              '| Version | Link |',
+              '|---------|------|',
+            ];
+
+            if (hasBase) {
+              lines.push(`| **Base** (before) | [View Report](${baseUrl}/base.html) |`);
+            } else {
+              lines.push(`| **Base** (before) | _Not available (visualizer not configured on base branch)_ |`);
+            }
+            lines.push(`| **PR** (after) | [View Report](${baseUrl}/head.html) |`);
+            lines.push('');
+            lines.push(`[View comparison index](${baseUrl}/)`);
+            lines.push('');
+            lines.push(`_Generated at commit ${context.sha.substring(0, 7)}_`);
+
+            const body = lines.join('\n');
+            const marker = '## 📊 Bundle Analysis Report';
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: prNumber,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.startsWith(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body,
+              });
+            }

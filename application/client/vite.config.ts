@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { defineConfig, type Plugin } from "vite";
+import { visualizer } from "rollup-plugin-visualizer";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
 // Map of bare specifiers to resolved file paths for ?binary imports
@@ -121,6 +122,17 @@ export default defineConfig({
         },
       ],
     }),
+    ...(process.env["BUNDLE_ANALYZE"] === "true"
+      ? [
+          visualizer({
+            filename: path.resolve(__dirname, "../dist/bundle-report.html"),
+            open: false,
+            gzipSize: true,
+            brotliSize: true,
+            template: "treemap",
+          }),
+        ]
+      : []),
   ],
   css: {
     postcss: "./postcss.config.js",
