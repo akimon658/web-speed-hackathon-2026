@@ -12,6 +12,19 @@ const BINARY_ALIASES: Record<string, string> = {
   "@imagemagick/magick-wasm/magick.wasm": path.resolve(__dirname, "node_modules/@imagemagick/magick-wasm/dist/magick.wasm"),
 };
 
+function negaposiDictPlugin(): Plugin {
+  return {
+    name: "negaposi-dict-stub",
+    enforce: "pre",
+    resolveId(source) {
+      if (source.endsWith("pn_ja.dic.json")) {
+        return path.resolve(__dirname, "src/stubs/pn_ja.dic.json");
+      }
+      return null;
+    },
+  };
+}
+
 function binaryImportPlugin(): Plugin {
   return {
     name: "binary-import",
@@ -113,6 +126,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    negaposiDictPlugin(),
     binaryImportPlugin(),
     viteStaticCopy({
       targets: [
