@@ -17,7 +17,11 @@ app.use(bodyParser.raw({ limit: "10mb" }));
 
 app.use((_req, res, next) => {
   // Allow long-lived caching for static image/movie/sound assets
-  if (/^\/(images|movies|sounds)\//.test(_req.path)) {
+  if (/^\/(scripts|styles)\//.test(_req.path)) {
+    res.header({
+      "Cache-Control": "public, max-age=31536000, immutable",
+    });
+  } else if (/^\/(images|movies|sounds)\//.test(_req.path)) {
     res.header({
       "Cache-Control": "public, max-age=86400",
     });

@@ -54,11 +54,11 @@ export default defineConfig(async () => {
       emptyOutDir: true,
       rolldownOptions: {
         output: {
-          entryFileNames: "scripts/[name].js",
+          entryFileNames: "scripts/[name]-[hash].js",
           chunkFileNames: "scripts/chunk-[hash].js",
           assetFileNames: (assetInfo) => {
             if (assetInfo.names?.[0]?.endsWith(".css")) {
-              return "styles/[name][extname]";
+              return "styles/[name]-[hash][extname]";
             }
             return "assets/[name]-[hash][extname]";
           },
