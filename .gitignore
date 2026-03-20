@@ -222,3 +222,4 @@ application/upload/**
 !application/upload/**/.gitkeep
 .image-cache/
 .movie-cache/
+.sound-cache/
