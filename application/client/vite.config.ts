@@ -24,8 +24,6 @@ export default defineConfig({
     target: "esnext",
     outDir: "../dist",
     emptyOutDir: true,
-    minify: false,
-    cssCodeSplit: false,
     rollupOptions: {
       output: {
         entryFileNames: "scripts/[name].js",
