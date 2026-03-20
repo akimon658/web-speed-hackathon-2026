@@ -37,7 +37,8 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends ffmpeg
+          sudo apt-get install -y --no-install-recommends ffmpeg fonts-noto-cjk
+          sudo fc-cache -fv
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
