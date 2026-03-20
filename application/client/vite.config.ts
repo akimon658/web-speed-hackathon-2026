@@ -1,14 +1,8 @@
-import fs from "node:fs";
 import path from "node:path";
 
 import { defineConfig, type Plugin } from "vite";
 import { visualizer } from "rollup-plugin-visualizer";
 import { viteStaticCopy } from "vite-plugin-static-copy";
-
-// Map of bare specifiers to resolved file paths for ?binary imports
-const BINARY_ALIASES: Record<string, string> = {
-  "@imagemagick/magick-wasm/magick.wasm": path.resolve(__dirname, "node_modules/@imagemagick/magick-wasm/dist/magick.wasm"),
-};
 
 function negaposiDictPlugin(): Plugin {
   return {
@@ -19,37 +13,6 @@ function negaposiDictPlugin(): Plugin {
         return path.resolve(__dirname, "src/stubs/pn_ja.dic.json");
       }
       return null;
-    },
-  };
-}
-
-function binaryImportPlugin(): Plugin {
-  return {
-    name: "binary-import",
-    enforce: "pre",
-    resolveId(source) {
-      if (!source.endsWith("?binary")) return null;
-      const bare = source.replace(/\?binary$/, "");
-      const resolved = BINARY_ALIASES[bare];
-      if (resolved) {
-        return resolved + "?binary";
-      }
-      return null;
-    },
-    load(id) {
-      if (!id.endsWith("?binary")) return null;
-      const filePath = id.replace(/\?binary$/, "");
-      const buffer = fs.readFileSync(filePath);
-      const base64 = buffer.toString("base64");
-      return `
-const base64 = "${base64}";
-const binaryString = atob(base64);
-const bytes = new Uint8Array(binaryString.length);
-for (let i = 0; i < binaryString.length; i++) {
-  bytes[i] = binaryString.charCodeAt(i);
-}
-export default bytes;
-`;
     },
   };
 }
@@ -90,10 +53,6 @@ export default defineConfig({
         find: /^kuromoji$/,
         replacement: path.resolve(__dirname, "node_modules/kuromoji/build/kuromoji.js"),
       },
-      {
-        find: /^@imagemagick\/magick-wasm\/magick\.wasm$/,
-        replacement: path.resolve(__dirname, "node_modules/@imagemagick/magick-wasm/dist/magick.wasm"),
-      },
     ],
   },
   define: {
@@ -113,7 +72,6 @@ export default defineConfig({
   },
   plugins: [
     negaposiDictPlugin(),
-    binaryImportPlugin(),
     viteStaticCopy({
       targets: [
         {
