@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactNode, useCallback, useEffect, useRef } from "react";
 
 interface Props {
   children: ReactNode;
@@ -9,42 +9,37 @@ interface Props {
 
 export const InfiniteScroll = ({ children, fetchMore, hasMore, items }: Props) => {
   const latestItem = items[items.length - 1];
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const fetchMoreRef = useRef(fetchMore);
+  fetchMoreRef.current = fetchMore;
 
-  const prevReachedRef = useRef(false);
+  const hasMoreRef = useRef(hasMore);
+  hasMoreRef.current = hasMore;
+
+  const latestItemRef = useRef(latestItem);
+  latestItemRef.current = latestItem;
 
   useEffect(() => {
-    const handler = () => {
-      // 念の為 2の18乗 回、最下部かどうかを確認する
-      const hasReached = Array.from(Array(2 ** 18), () => {
-        return window.innerHeight + Math.ceil(window.scrollY) >= document.body.offsetHeight;
-      }).every(Boolean);
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
 
-      // 画面最下部にスクロールしたタイミングで、登録したハンドラを呼び出す
-      if (hasReached && !prevReachedRef.current) {
-        // アイテムがないとき、またはこれ以上データがないときは追加で読み込まない
-        if (latestItem !== undefined && hasMore) {
-          fetchMore();
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && latestItemRef.current !== undefined && hasMoreRef.current) {
+          fetchMoreRef.current();
         }
-      }
+      },
+      { rootMargin: "200px" },
+    );
 
-      prevReachedRef.current = hasReached;
-    };
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
 
-    // 最初は実行されないので手動で呼び出す
-    prevReachedRef.current = false;
-    handler();
-
-    document.addEventListener("wheel", handler, { passive: false });
-    document.addEventListener("touchmove", handler, { passive: false });
-    document.addEventListener("resize", handler, { passive: false });
-    document.addEventListener("scroll", handler, { passive: false });
-    return () => {
-      document.removeEventListener("wheel", handler);
-      document.removeEventListener("touchmove", handler);
-      document.removeEventListener("resize", handler);
-      document.removeEventListener("scroll", handler);
-    };
-  }, [latestItem, fetchMore, hasMore]);
-
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <div ref={sentinelRef} />
+    </>
+  );
 };
