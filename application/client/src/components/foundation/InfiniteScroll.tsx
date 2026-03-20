@@ -2,11 +2,12 @@ import { ReactNode, useEffect, useRef } from "react";
 
 interface Props {
   children: ReactNode;
+  hasMore: boolean;
   items: any[];
   fetchMore: () => void;
 }
 
-export const InfiniteScroll = ({ children, fetchMore, items }: Props) => {
+export const InfiniteScroll = ({ children, fetchMore, hasMore, items }: Props) => {
   const latestItem = items[items.length - 1];
 
   const prevReachedRef = useRef(false);
@@ -20,8 +21,8 @@ export const InfiniteScroll = ({ children, fetchMore, items }: Props) => {
 
       // 画面最下部にスクロールしたタイミングで、登録したハンドラを呼び出す
       if (hasReached && !prevReachedRef.current) {
-        // アイテムがないときは追加で読み込まない
-        if (latestItem !== undefined) {
+        // アイテムがないとき、またはこれ以上データがないときは追加で読み込まない
+        if (latestItem !== undefined && hasMore) {
           fetchMore();
         }
       }
@@ -43,7 +44,7 @@ export const InfiniteScroll = ({ children, fetchMore, items }: Props) => {
       document.removeEventListener("resize", handler);
       document.removeEventListener("scroll", handler);
     };
-  }, [latestItem, fetchMore]);
+  }, [latestItem, fetchMore, hasMore]);
 
   return <>{children}</>;
 };
