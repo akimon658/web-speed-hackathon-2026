@@ -52,7 +52,7 @@ export default defineConfig(async () => {
       target: "esnext",
       outDir: "../dist",
       emptyOutDir: true,
-      rollupOptions: {
+      rolldownOptions: {
         output: {
           entryFileNames: "scripts/[name].js",
           chunkFileNames: "scripts/chunk-[hash].js",
