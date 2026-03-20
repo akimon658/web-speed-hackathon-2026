@@ -37,8 +37,15 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends ffmpeg fonts-noto-cjk
-          sudo fc-cache -fv
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Install Noto Serif JP font
+        run: |
+          mkdir -p ~/.local/share/fonts
+          curl -L -o /tmp/Noto_Serif_JP.zip "https://fonts.google.com/download?family=Noto+Serif+JP"
+          unzip -o /tmp/Noto_Serif_JP.zip -d ~/.local/share/fonts/NotoSerifJP
+          rm /tmp/Noto_Serif_JP.zip
+          fc-cache -fv
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
