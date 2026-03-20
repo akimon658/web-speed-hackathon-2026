@@ -27,9 +27,12 @@ jobs:
       - name: Checkout initial commit (baseline)
         uses: actions/checkout@v4
         with:
-          ref: d0f9f84
           fetch-depth: 0
           path: base
+
+      - name: Reset baseline to initial commit
+        working-directory: base
+        run: git checkout d0f9f84
 
       - name: Install system dependencies
         run: |
