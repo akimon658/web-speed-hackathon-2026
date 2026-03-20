@@ -1,5 +1,9 @@
 import $ from "jquery";
+import "jquery-binarytransport";
 import { gzip } from "pako";
+
+// jquery-binarytransport requires window.jQuery
+window.jQuery = $;
 
 export async function fetchBinary(url: string): Promise<ArrayBuffer> {
   const result = await $.ajax({
