@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
@@ -21,6 +22,7 @@ function negaposiDictPlugin(): Plugin {
 
 export default defineConfig(async () => {
   const plugins: Plugin[] = [
+    tailwindcss(),
     negaposiDictPlugin(),
     viteStaticCopy({
       targets: [
