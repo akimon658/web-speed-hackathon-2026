@@ -15,6 +15,10 @@ export async function fetchBinary(url: string): Promise<ArrayBuffer> {
 
 export async function fetchJSON<T>(url: string): Promise<T> {
   const response = await fetch(url);
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new HttpError(response.status, body);
+  }
   return response.json() as Promise<T>;
 }
 
