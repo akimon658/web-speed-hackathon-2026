@@ -6,6 +6,7 @@ import { RefCallback, useCallback, useRef, useState } from "react";
 import { AspectRatioBox } from "@web-speed-hackathon-2026/client/src/components/foundation/AspectRatioBox";
 import { FontAwesomeIcon } from "@web-speed-hackathon-2026/client/src/components/foundation/FontAwesomeIcon";
 import { useFetch } from "@web-speed-hackathon-2026/client/src/hooks/use_fetch";
+import { useInViewport } from "@web-speed-hackathon-2026/client/src/hooks/use_in_viewport";
 import { fetchBinary } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
 
 interface Props {
@@ -16,7 +17,8 @@ interface Props {
  * クリックすると再生・一時停止を切り替えます。
  */
 export const PausableMovie = ({ src }: Props) => {
-  const { data, isLoading } = useFetch(src, fetchBinary);
+  const { ref: inViewRef, isInViewport } = useInViewport();
+  const { data, isLoading } = useFetch(src, fetchBinary, isInViewport);
 
   const animatorRef = useRef<Animator>(null);
   const canvasCallbackRef = useCallback<RefCallback<HTMLCanvasElement>>(
@@ -62,7 +64,7 @@ export const PausableMovie = ({ src }: Props) => {
   }, []);
 
   if (isLoading || data === null) {
-    return null;
+    return <div ref={inViewRef} className="h-full w-full" />;
   }
 
   return (
