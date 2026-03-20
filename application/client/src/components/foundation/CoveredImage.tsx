@@ -1,3 +1,4 @@
+import { Buffer } from "buffer";
 import classNames from "classnames";
 import sizeOf from "image-size";
 import { load, ImageIFD } from "piexifjs";

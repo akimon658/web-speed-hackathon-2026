@@ -11,7 +11,8 @@
     "paths": {
       "@web-speed-hackathon-2026/client/*": ["./*"]
     },
-    "exactOptionalPropertyTypes": false
+    "exactOptionalPropertyTypes": false,
+    "types": ["vite/client"]
   },
   "include": ["./src", "./types"]
 }
