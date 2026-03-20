@@ -24,10 +24,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           path: head
 
-      - name: Checkout base branch
+      - name: Checkout initial commit (baseline)
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: d0f9f84
           path: base
 
       - name: Install system dependencies
