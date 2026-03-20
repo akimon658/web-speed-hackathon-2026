@@ -7,8 +7,6 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 
 // Map of bare specifiers to resolved file paths for ?binary imports
 const BINARY_ALIASES: Record<string, string> = {
-  "@ffmpeg/core": path.resolve(__dirname, "node_modules/@ffmpeg/core/dist/umd/ffmpeg-core.js"),
-  "@ffmpeg/core/wasm": path.resolve(__dirname, "node_modules/@ffmpeg/core/dist/umd/ffmpeg-core.wasm"),
   "@imagemagick/magick-wasm/magick.wasm": path.resolve(__dirname, "node_modules/@imagemagick/magick-wasm/dist/magick.wasm"),
 };
 
@@ -91,18 +89,6 @@ export default defineConfig({
       {
         find: /^kuromoji$/,
         replacement: path.resolve(__dirname, "node_modules/kuromoji/build/kuromoji.js"),
-      },
-      {
-        find: /^@ffmpeg\/core\/wasm$/,
-        replacement: path.resolve(__dirname, "node_modules/@ffmpeg/core/dist/umd/ffmpeg-core.wasm"),
-      },
-      {
-        find: /^@ffmpeg\/core$/,
-        replacement: path.resolve(__dirname, "node_modules/@ffmpeg/core/dist/umd/ffmpeg-core.js"),
-      },
-      {
-        find: /^@ffmpeg\/ffmpeg$/,
-        replacement: path.resolve(__dirname, "node_modules/@ffmpeg/ffmpeg/dist/esm/index.js"),
       },
       {
         find: /^@imagemagick\/magick-wasm\/magick\.wasm$/,
