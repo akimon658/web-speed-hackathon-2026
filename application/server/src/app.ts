@@ -4,6 +4,7 @@ import Express from "express";
 import { apiRouter } from "@web-speed-hackathon-2026/server/src/routes/api";
 import { imageOptimizerRouter } from "@web-speed-hackathon-2026/server/src/routes/image_optimizer";
 import { movieOptimizerRouter } from "@web-speed-hackathon-2026/server/src/routes/movie_optimizer";
+import { soundPeaksRouter } from "@web-speed-hackathon-2026/server/src/routes/sound_peaks";
 import { staticRouter } from "@web-speed-hackathon-2026/server/src/routes/static";
 import { sessionMiddleware } from "@web-speed-hackathon-2026/server/src/session";
 
@@ -37,4 +38,5 @@ app.use((_req, res, next) => {
 app.use("/api/v1", apiRouter);
 app.use(imageOptimizerRouter);
 app.use(movieOptimizerRouter);
+app.use(soundPeaksRouter);
 app.use(staticRouter);
