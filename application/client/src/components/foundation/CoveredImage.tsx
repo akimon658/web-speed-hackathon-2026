@@ -7,12 +7,13 @@ import { useInViewport } from "@web-speed-hackathon-2026/client/src/hooks/use_in
 interface Props {
   alt: string;
   src: string;
+  priority?: boolean;
 }
 
 /**
  * アスペクト比を維持したまま、要素のコンテンツボックス全体を埋めるように画像を拡大縮小します
  */
-export const CoveredImage = ({ alt, src }: Props) => {
+export const CoveredImage = ({ alt, src, priority = false }: Props) => {
   const dialogId = useId();
   // ダイアログの背景をクリックしたときに投稿詳細ページに遷移しないようにする
   const handleDialogClick = useCallback((ev: MouseEvent<HTMLDialogElement>) => {
@@ -21,7 +22,7 @@ export const CoveredImage = ({ alt, src }: Props) => {
 
   const { ref: inViewRef, isInViewport } = useInViewport();
 
-  if (!isInViewport) {
+  if (!priority && !isInViewport) {
     return <div ref={inViewRef} className="h-full w-full" />;
   }
 
@@ -30,7 +31,8 @@ export const CoveredImage = ({ alt, src }: Props) => {
       <img
         alt={alt}
         className="h-full w-full object-cover"
-        loading="lazy"
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : undefined}
         src={src}
       />
 
