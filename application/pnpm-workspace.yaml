@@ -6,6 +6,7 @@ allowBuilds:
   core-js: true
   bcrypt: true
   esbuild: true
+  rolldown: true
   sqlite3: true
   negaposi-analyzer-ja: true
 overrides:
