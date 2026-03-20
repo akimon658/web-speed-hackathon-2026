@@ -227,3 +227,9 @@ jobs:
                 body,
               });
             }
+
+      - name: Fail if VRT detected differences
+        if: steps.vrt.outcome == 'failure'
+        run: |
+          echo "VRT detected visual differences. Failing the job."
+          exit 1
