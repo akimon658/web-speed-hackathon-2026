@@ -2,7 +2,6 @@ import * as github from "@actions/github";
 import { defineCommand, runMain } from "citty";
 import { stripIndents } from "common-tags";
 import debug from "debug";
-import _ from "lodash";
 import { inject } from "regexparam";
 
 import { calculate, TARGET_NAME_LIST } from "./calculate";
@@ -291,8 +290,8 @@ const command = defineCommand({
       }
 
       {
-        const totalScore = _.round(_.sum(_.map(results, ({ scoreX100 }) => scoreX100)) / 100, 2);
-        const totalMaxScore = _.sum(_.map(results, ({ target }) => target.maxScore));
+        const totalScore = Math.round(results.reduce((sum, { scoreX100 }) => sum + scoreX100, 0)) / 100;
+        const totalMaxScore = results.reduce((sum, { target }) => sum + target.maxScore, 0);
 
         const { rank } = await sendScoreToDashboard(totalScore);
 
