@@ -1,6 +1,5 @@
 import { setTimeout } from "node:timers/promises";
 
-import _ from "lodash";
 import mergeErrorCause from "merge-error-cause";
 import type * as playwright from "playwright";
 import type * as puppeteer from "puppeteer";
@@ -214,10 +213,9 @@ export async function* calculate({
     yield result;
   }
 
-  const landingTotalScore = _.round(
-    _.sum(_.map(landingResults, ({ scoreX100 }) => scoreX100)) / 100,
-    2,
-  );
+  const landingTotalScore = Math.round(
+    landingResults.reduce((sum, { scoreX100 }) => sum + scoreX100, 0),
+  ) / 100;
 
   if (landingTotalScore < LANDING_SCORE_THRESHOLD) {
     for (const target of USER_FLOW_TARGET_LIST) {
