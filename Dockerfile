@@ -7,6 +7,8 @@ FROM node:${NODE_VERSION}-slim AS base
 
 LABEL fly_launch_runtime="Node.js"
 
+RUN apt-get update -qq && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+
 ENV PNPM_HOME=/pnpm
 
 WORKDIR /app
