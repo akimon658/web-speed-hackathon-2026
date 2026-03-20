@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
   actions: read
 
@@ -24,13 +24,28 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           path: head
 
+      - name: Check for existing baseline snapshots
+        id: check-baseline
+        working-directory: head/application/e2e
+        run: |
+          SNAPSHOT_COUNT=$(find src -name "*-snapshots" -type d -exec find {} -name "*.png" \; 2>/dev/null | wc -l)
+          if [ "$SNAPSHOT_COUNT" -gt 0 ]; then
+            echo "has_baseline=true" >> $GITHUB_OUTPUT
+            echo "Found $SNAPSHOT_COUNT existing baseline snapshots, skipping baseline generation"
+          else
+            echo "has_baseline=false" >> $GITHUB_OUTPUT
+            echo "No baseline snapshots found, will generate them"
+          fi
+
       - name: Checkout initial commit (baseline)
+        if: steps.check-baseline.outputs.has_baseline != 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           path: base
 
       - name: Reset baseline to initial commit
+        if: steps.check-baseline.outputs.has_baseline != 'true'
         working-directory: base
         run: git checkout d0f9f84
 
@@ -51,24 +66,27 @@ jobs:
           cache: pnpm
           cache-dependency-path: |
             head/application/pnpm-lock.yaml
-            base/application/pnpm-lock.yaml
 
-      # --- Base branch: generate baseline snapshots ---
+      # --- Base branch: generate baseline snapshots (only if not committed) ---
       - name: Install dependencies (base)
+        if: steps.check-baseline.outputs.has_baseline != 'true'
         working-directory: base/application
         run: pnpm install --frozen-lockfile
 
       - name: Build client (base)
+        if: steps.check-baseline.outputs.has_baseline != 'true'
         working-directory: base/application
         run: pnpm build
         env:
           NODE_ENV: production
 
       - name: Install Playwright browsers (base)
+        if: steps.check-baseline.outputs.has_baseline != 'true'
         working-directory: base/application
         run: pnpm --filter @web-speed-hackathon-2026/e2e exec playwright install --with-deps chromium
 
       - name: Generate baseline snapshots (base)
+        if: steps.check-baseline.outputs.has_baseline != 'true'
         working-directory: base/application
         run: |
           pnpm start &
@@ -95,6 +113,32 @@ jobs:
         env:
           E2E_WORKERS: "2"
 
+      - name: Copy baseline snapshots to head
+        if: steps.check-baseline.outputs.has_baseline != 'true'
+        run: |
+          # Copy generated baseline snapshots from base to head
+          find base/application/e2e/src -name "*-snapshots" -type d | while read dir; do
+            relative="${dir#base/application/e2e/}"
+            target="head/application/e2e/${relative}"
+            mkdir -p "$target"
+            cp -r "$dir"/* "$target"/ 2>/dev/null || true
+          done
+
+      - name: Commit baseline snapshots
+        if: steps.check-baseline.outputs.has_baseline != 'true'
+        working-directory: head
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add application/e2e/src/**/*-snapshots/*.png
+          if git diff --cached --quiet; then
+            echo "No snapshots to commit"
+          else
+            git commit -m "chore: add VRT baseline snapshots"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+            echo "Baseline snapshots committed and pushed"
+          fi
+
       # --- PR branch: run VRT against baseline ---
       - name: Install dependencies (head)
         working-directory: head/application
@@ -109,16 +153,6 @@ jobs:
       - name: Install Playwright browsers (head)
         working-directory: head/application
         run: pnpm --filter @web-speed-hackathon-2026/e2e exec playwright install --with-deps chromium
-
-      - name: Copy baseline snapshots to head
-        run: |
-          # Copy generated baseline snapshots from base to head
-          find base/application/e2e/src -name "*-snapshots" -type d | while read dir; do
-            relative="${dir#base/application/e2e/}"
-            target="head/application/e2e/${relative}"
-            mkdir -p "$target"
-            cp -r "$dir"/* "$target"/ 2>/dev/null || true
-          done
 
       - name: Run VRT (head)
         id: vrt
