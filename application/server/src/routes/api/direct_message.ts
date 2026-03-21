@@ -16,20 +16,56 @@ directMessageRouter.get("/dm", async (req, res) => {
     throw new httpErrors.Unauthorized();
   }
 
-  const conversations = await DirectMessageConversation.findAll({
+  // Fetch conversations without loading all messages (bypass default scope)
+  const conversations = await DirectMessageConversation.scope(null).findAll({
     where: {
-      [Op.and]: [
-        { [Op.or]: [{ initiatorId: req.session.userId }, { memberId: req.session.userId }] },
-        where(col("messages.id"), { [Op.not]: null }),
-      ],
+      [Op.or]: [{ initiatorId: req.session.userId }, { memberId: req.session.userId }],
     },
-    order: [[col("messages.createdAt"), "DESC"]],
+    include: [
+      { association: "initiator", include: [{ association: "profileImage" }] },
+      { association: "member", include: [{ association: "profileImage" }] },
+    ],
   });
 
-  const sorted = conversations.map((c) => ({
-    ...c.toJSON(),
-    messages: c.messages?.reverse(),
-  }));
+  // For each conversation, fetch only the latest message and unread status
+  const results = await Promise.all(
+    conversations.map(async (conversation) => {
+      const peerId =
+        conversation.initiatorId !== req.session.userId
+          ? conversation.initiatorId
+          : conversation.memberId;
+
+      const [lastMessage, unreadCount] = await Promise.all([
+        DirectMessage.findOne({
+          where: { conversationId: conversation.id },
+          order: [["createdAt", "DESC"]],
+          include: [{ association: "sender", include: [{ association: "profileImage" }] }],
+        }),
+        DirectMessage.count({
+          where: { conversationId: conversation.id, senderId: peerId, isRead: false },
+        }),
+      ]);
+
+      if (lastMessage == null) {
+        return null;
+      }
+
+      return {
+        ...conversation.toJSON(),
+        messages: [lastMessage.toJSON()],
+        hasUnread: unreadCount > 0,
+      };
+    }),
+  );
+
+  // Filter out conversations with no messages, sort by latest message descending
+  const sorted = results
+    .filter((r) => r != null)
+    .sort((a, b) => {
+      const aTime = new Date(a.messages[0]!.createdAt).getTime();
+      const bTime = new Date(b.messages[0]!.createdAt).getTime();
+      return bTime - aTime;
+    });
 
   return res.status(200).type("application/json").send(sorted);
 });
