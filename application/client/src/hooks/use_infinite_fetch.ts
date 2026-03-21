@@ -10,17 +10,43 @@ interface ReturnValues<T> {
   fetchMore: () => void;
 }
 
+function consumeInitialData<T>(apiPath: string): T[] | null {
+  if (apiPath === "/api/v1/posts" && (window as any).__INITIAL_POSTS__) {
+    const data = (window as any).__INITIAL_POSTS__ as T[];
+    delete (window as any).__INITIAL_POSTS__;
+    return data;
+  }
+  return null;
+}
+
 export function useInfiniteFetch<T>(
   apiPath: string,
   fetcher: (apiPath: string) => Promise<T[]>,
 ): ReturnValues<T> {
   const internalRef = useRef({ isLoading: false, offset: 0, hasMore: true });
 
-  const [result, setResult] = useState<Omit<ReturnValues<T>, "fetchMore">>({
-    data: [],
-    error: null,
-    hasMore: true,
-    isLoading: true,
+  const [result, setResult] = useState<Omit<ReturnValues<T>, "fetchMore">>(() => {
+    const initialData = consumeInitialData<T>(apiPath);
+    if (initialData) {
+      const newHasMore = initialData.length >= LIMIT;
+      internalRef.current = {
+        isLoading: false,
+        offset: initialData.length,
+        hasMore: newHasMore,
+      };
+      return {
+        data: initialData,
+        error: null,
+        hasMore: newHasMore,
+        isLoading: false,
+      };
+    }
+    return {
+      data: [],
+      error: null,
+      hasMore: true,
+      isLoading: true,
+    };
   });
 
   const fetchMore = useCallback(() => {
@@ -71,6 +97,11 @@ export function useInfiniteFetch<T>(
   }, [apiPath, fetcher]);
 
   useEffect(() => {
+    // 初期データが既にある場合はfetchをスキップ
+    if (result.data.length > 0 && !result.isLoading) {
+      return;
+    }
+
     setResult(() => ({
       data: [],
       error: null,
