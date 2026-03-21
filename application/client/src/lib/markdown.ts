@@ -81,7 +81,7 @@ const marked = new Marked(
       if (lang && hljs.getLanguage(lang)) {
         return hljs.highlight(code, { language: lang }).value;
       }
-      return hljs.highlight(code, { language: "plaintext" }).value;
+      return hljs.highlightAuto(code).value;
     },
   }),
   markedFootnote(),
