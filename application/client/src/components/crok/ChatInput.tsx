@@ -77,10 +77,24 @@ function highlightMatchByTokens(text: string, queryTokens: string[]): React.Reac
 export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const allSuggestionsRef = useRef<string[] | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [queryTokens, setQueryTokens] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // サジェスト一覧をマウント時に1回だけ取得してキャッシュ
+  useEffect(() => {
+    let cancelled = false;
+    fetchJSON<{ suggestions: string[] }>("/api/v1/crok/suggestions").then((data) => {
+      if (!cancelled) {
+        allSuggestionsRef.current = data.suggestions;
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // サジェストが更新されたら一番下にスクロール
   useLayoutEffect(() => {
@@ -89,41 +103,26 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
     }
   }, [suggestions, showSuggestions]);
 
+  // 入力値が変わるたびにキャッシュ済みデータからフィルタリング
   useEffect(() => {
-    let cancelled = false;
+    if (!inputValue.trim()) {
+      setSuggestions([]);
+      setQueryTokens([]);
+      setShowSuggestions(false);
+      return;
+    }
 
-    const updateSuggestions = async () => {
-      if (!inputValue.trim()) {
-        setSuggestions([]);
-        setQueryTokens([]);
-        setShowSuggestions(false);
-        return;
-      }
+    const candidates = allSuggestionsRef.current;
+    if (candidates == null) {
+      return;
+    }
 
-      const { suggestions: candidates } = await fetchJSON<{ suggestions: string[] }>(
-        "/api/v1/crok/suggestions",
-      );
-      if (cancelled) {
-        return;
-      }
+    const tokens = extractTokens(inputValue);
+    const results = filterSuggestionsBM25(candidates, tokens);
 
-      const tokens = extractTokens(inputValue);
-      const results = filterSuggestionsBM25(candidates, tokens);
-
-      if (cancelled) {
-        return;
-      }
-
-      setQueryTokens(tokens);
-      setSuggestions(results);
-      setShowSuggestions(results.length > 0);
-    };
-
-    void updateSuggestions();
-
-    return () => {
-      cancelled = true;
-    };
+    setQueryTokens(tokens);
+    setSuggestions(results);
+    setShowSuggestions(results.length > 0);
   }, [inputValue]);
 
   const adjustTextareaHeight = () => {
