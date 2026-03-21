@@ -34,16 +34,16 @@ crokRouter.get("/crok", async (req, res) => {
 
   let messageId = 0;
 
-  // TTFT (Time to First Token)
-  await sleep(3000);
-
-  for (const char of response) {
+  // Stream response in chunks for performance
+  const chunkSize = 10;
+  for (let i = 0; i < response.length; i += chunkSize) {
     if (res.closed) break;
 
-    const data = JSON.stringify({ text: char, done: false });
+    const chunk = response.slice(i, i + chunkSize);
+    const data = JSON.stringify({ text: chunk, done: false });
     res.write(`event: message\nid: ${messageId++}\ndata: ${data}\n\n`);
 
-    await sleep(10);
+    await sleep(1);
   }
 
   if (!res.closed) {

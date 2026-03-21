@@ -55,7 +55,7 @@ staticRouter.get("/", async (_req, res, next) => {
     let html = template;
 
     // 初期投稿データを取得（TBT削減のため少数に）
-    const posts = await Post.findAll({ limit: 10 });
+    const posts = await Post.findAll({ limit: 3 });
     const postsJSON = JSON.stringify(posts);
 
     // LCP画像のプリロードリンクを生成

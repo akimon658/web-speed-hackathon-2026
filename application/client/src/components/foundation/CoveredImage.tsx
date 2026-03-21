@@ -6,6 +6,7 @@ import { useInViewport } from "@web-speed-hackathon-2026/client/src/hooks/use_in
 
 interface Props {
   imageId: string;
+  alt?: string;
   src: string;
   priority?: boolean;
 }
@@ -13,7 +14,7 @@ interface Props {
 /**
  * アスペクト比を維持したまま、要素のコンテンツボックス全体を埋めるように画像を拡大縮小します
  */
-export const CoveredImage = ({ imageId, src, priority = false }: Props) => {
+export const CoveredImage = ({ imageId, alt: altProp = "", src, priority = false }: Props) => {
   const dialogId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [alt, setAlt] = useState<string | null>(null);
@@ -48,7 +49,7 @@ export const CoveredImage = ({ imageId, src, priority = false }: Props) => {
   return (
     <div className="relative h-full w-full overflow-hidden">
       <img
-        alt=""
+        alt={altProp}
         className="h-full w-full object-cover"
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : undefined}

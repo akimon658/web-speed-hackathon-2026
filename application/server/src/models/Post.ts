@@ -53,7 +53,7 @@ export function initPost(sequelize: Sequelize) {
           },
           {
             association: "images",
-            attributes: ["id"],
+            attributes: ["id", "alt"],
             through: { attributes: [] },
           },
           { association: "movie" },

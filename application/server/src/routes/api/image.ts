@@ -102,6 +102,10 @@ imageRouter.post("/images", async (req, res) => {
     if (metadata.exif) {
       alt = extractImageDescriptionFromExif(metadata.exif);
     }
+    // TIFF files store ImageDescription in the main IFD, not EXIF sub-IFD
+    if (!alt && metadata.format === "tiff" && Buffer.isBuffer(req.body)) {
+      alt = extractImageDescriptionFromExif(req.body);
+    }
   } catch {
     // EXIF抽出失敗は無視
   }
