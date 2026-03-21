@@ -1,6 +1,8 @@
 import "highlight.js/styles/atom-one-light.css";
 import "katex/dist/katex.min.css";
 
+import { useDeferredValue, useMemo } from "react";
+
 import { renderMarkdown } from "@web-speed-hackathon-2026/client/src/lib/markdown";
 import { TypingIndicator } from "@web-speed-hackathon-2026/client/src/components/crok/TypingIndicator";
 import { CrokLogo } from "@web-speed-hackathon-2026/client/src/components/foundation/CrokLogo";
@@ -20,6 +22,9 @@ const UserMessage = ({ content }: { content: string }) => {
 };
 
 const AssistantMessage = ({ content }: { content: string }) => {
+  const deferredContent = useDeferredValue(content);
+  const html = useMemo(() => renderMarkdown(deferredContent), [deferredContent]);
+
   return (
     <div className="mb-6 flex gap-4">
       <div className="h-8 w-8 shrink-0">
@@ -28,8 +33,8 @@ const AssistantMessage = ({ content }: { content: string }) => {
       <div className="min-w-0 flex-1">
         <div className="text-cax-text mb-1 text-sm font-medium">Crok</div>
         <div className="markdown text-cax-text max-w-none">
-          {content ? (
-            <div key={content} dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
+          {deferredContent ? (
+            <div dangerouslySetInnerHTML={{ __html: html }} />
           ) : (
             <TypingIndicator />
           )}
