@@ -2,7 +2,13 @@ const MAX_WIDTH = 800;
 const QUALITY = 0.75;
 
 export async function compressImage(file: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(file);
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    // TIFF等ブラウザが未対応の形式はそのままサーバーに送る
+    return file;
+  }
 
   let width = bitmap.width;
   let height = bitmap.height;
