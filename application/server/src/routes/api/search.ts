@@ -38,25 +38,17 @@ searchRouter.get("/search", async (req, res) => {
   // テキスト検索条件
   const textWhere = searchTerm ? { text: { [Op.like]: searchTerm } } : {};
 
-  // Build combined where clause for text and user search
-  const whereConditions: any[] = [];
-  if (textWhere.text) {
-    whereConditions.push({ ...textWhere, ...dateWhere });
-  }
+  const postsByText = await Post.findAll({
+    where: {
+      ...textWhere,
+      ...dateWhere,
+    },
+  });
 
-  let result;
-  if (searchTerm && whereConditions.length > 0) {
-    // Search by text OR by user
-    const postsByText = await Post.findAll({
-      where: {
-        ...textWhere,
-        ...dateWhere,
-      },
-      limit: limit || 30,
-      offset: offset || 0,
-    });
-
-    const postsByUser = await Post.findAll({
+  // ユーザー名/名前での検索（キーワードがある場合のみ）
+  let postsByUser: typeof postsByText = [];
+  if (searchTerm) {
+    postsByUser = await Post.findAll({
       include: [
         {
           association: "user",
@@ -74,50 +66,22 @@ searchRouter.get("/search", async (req, res) => {
         { association: "sound" },
       ],
       where: dateWhere,
-      limit: limit || 30,
     });
+  }
 
-    const postIdSet = new Set<string>();
-    const mergedPosts: typeof postsByText = [];
-    for (const post of [...postsByText, ...postsByUser]) {
-      if (!postIdSet.has(post.id)) {
-        postIdSet.add(post.id);
-        mergedPosts.push(post);
-      }
+  const postIdSet = new Set<string>();
+  const mergedPosts: typeof postsByText = [];
+
+  for (const post of [...postsByText, ...postsByUser]) {
+    if (!postIdSet.has(post.id)) {
+      postIdSet.add(post.id);
+      mergedPosts.push(post);
     }
-    mergedPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    result = mergedPosts.slice(0, limit || 30);
-  } else if (searchTerm) {
-    // Only user search
-    result = await Post.findAll({
-      include: [
-        {
-          association: "user",
-          include: [{ association: "profileImage" }],
-          required: true,
-          where: {
-            [Op.or]: [{ username: { [Op.like]: searchTerm } }, { name: { [Op.like]: searchTerm } }],
-          },
-        },
-        {
-          association: "images",
-          through: { attributes: [] },
-        },
-        { association: "movie" },
-        { association: "sound" },
-      ],
-      where: dateWhere,
-      limit: limit || 30,
-      offset: offset || 0,
-    });
-  } else {
-    // Only date filter
-    result = await Post.findAll({
-      where: dateWhere,
-      limit: limit || 30,
-      offset: offset || 0,
-    });
   }
+
+  mergedPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  const result = mergedPosts.slice(offset || 0, (offset || 0) + (limit || mergedPosts.length));
 
   return res.status(200).type("application/json").send(result);
 });
