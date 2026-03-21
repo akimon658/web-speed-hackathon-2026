@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@web-speed-hackathon-2026/client/src/components/foundation/Button";
 import { FontAwesomeIcon } from "@web-speed-hackathon-2026/client/src/components/foundation/FontAwesomeIcon";
@@ -33,13 +33,21 @@ export const DirectMessageListPage = ({ activeUser, newDmModalId }: Props) => {
     }
   }, [activeUser]);
 
+  const initialLoadDoneRef = useRef(false);
+
   useEffect(() => {
-    void loadConversations();
+    void loadConversations().then(() => {
+      initialLoadDoneRef.current = true;
+    });
   }, [loadConversations]);
 
-  useWs<{ type: string; payload: unknown }>("/api/v1/dm/unread", () => {
-    // Only update if conversations are already loaded; avoid full refetch
-    // The unread badge is already provided by the server in the initial fetch via hasUnread
+  useWs("/api/v1/dm/unread", () => {
+    // Skip the initial event that fires immediately on WebSocket connect,
+    // since we already have fresh data from the initial fetch above.
+    if (!initialLoadDoneRef.current) {
+      return;
+    }
+    void loadConversations();
   });
 
   if (conversations == null) {
