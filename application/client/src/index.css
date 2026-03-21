@@ -2,7 +2,7 @@
 
 @font-face {
   font-family: "Rei no Are Mincho";
-  font-display: block;
+  font-display: swap;
   src: local("Noto Serif JP"), local("Noto Serif JP ExtraLight"), local("NotoSerifJP-ExtraLight");
   font-weight: normal;
   ascent-override: 164.6%;
@@ -11,7 +11,7 @@
 
 @font-face {
   font-family: "Rei no Are Mincho";
-  font-display: block;
+  font-display: swap;
   src: local("Noto Serif JP"), local("Noto Serif JP ExtraLight"), local("NotoSerifJP-ExtraLight");
   font-weight: bold;
   ascent-override: 164.6%;
