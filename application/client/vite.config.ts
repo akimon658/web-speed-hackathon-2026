@@ -66,8 +66,8 @@ export default defineConfig(async ({ mode }) => {
         ...(mode === "production"
           ? [
               {
-                find: /react-router\/dist\/development\//,
-                replacement: "react-router/dist/production/",
+                find: /^react-router$/,
+                replacement: path.resolve(__dirname, "node_modules/react-router/dist/production/index.mjs"),
               },
             ]
           : []),
