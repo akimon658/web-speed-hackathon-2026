@@ -10,70 +10,39 @@ import { Image } from "@web-speed-hackathon-2026/server/src/models";
 import { PUBLIC_PATH, UPLOAD_PATH } from "@web-speed-hackathon-2026/server/src/paths";
 
 // 変換した画像の拡張子
-const EXTENSION = "jpg";
+const EXTENSION = "webp";
 
 /**
- * JPEG バッファから EXIF の ImageDescription を抽出する
+ * raw EXIF バッファ（TIFF形式）から ImageDescription を抽出する
+ * sharp の metadata().exif が返すバッファを直接パースする
  */
-function extractImageDescription(buffer: Buffer): string {
-  // JPEG SOI marker check
-  if (buffer[0] !== 0xff || buffer[1] !== 0xd8) {
+function extractImageDescriptionFromExif(exifBuffer: Buffer): string {
+  if (exifBuffer.length < 8) {
     return "";
   }
 
-  let offset = 2;
-  while (offset < buffer.length - 1) {
-    if (buffer[offset] !== 0xff) break;
-    const marker = buffer[offset + 1]!;
+  const isBigEndian = exifBuffer[0] === 0x4d && exifBuffer[1] === 0x4d;
 
-    if (marker === 0xe1) {
-      // APP1 (EXIF)
-      const segmentSize = buffer.readUInt16BE(offset + 2);
-      const segmentData = buffer.subarray(offset + 4, offset + 4 + segmentSize - 2);
+  const readU16 = isBigEndian
+    ? (buf: Buffer, off: number) => buf.readUInt16BE(off)
+    : (buf: Buffer, off: number) => buf.readUInt16LE(off);
+  const readU32 = isBigEndian
+    ? (buf: Buffer, off: number) => buf.readUInt32BE(off)
+    : (buf: Buffer, off: number) => buf.readUInt32LE(off);
 
-      // Check for "Exif\0\0" header
-      if (
-        segmentData[0] === 0x45 &&
-        segmentData[1] === 0x78 &&
-        segmentData[2] === 0x69 &&
-        segmentData[3] === 0x66 &&
-        segmentData[4] === 0x00 &&
-        segmentData[5] === 0x00
-      ) {
-        const tiffData = segmentData.subarray(6);
-        const isBigEndian = tiffData[0] === 0x4d && tiffData[1] === 0x4d;
+  const ifdOffset = readU32(exifBuffer, 4);
+  const entryCount = readU16(exifBuffer, ifdOffset);
 
-        const readU16 = isBigEndian
-          ? (buf: Buffer, off: number) => buf.readUInt16BE(off)
-          : (buf: Buffer, off: number) => buf.readUInt16LE(off);
-        const readU32 = isBigEndian
-          ? (buf: Buffer, off: number) => buf.readUInt32BE(off)
-          : (buf: Buffer, off: number) => buf.readUInt32LE(off);
+  for (let i = 0; i < entryCount; i++) {
+    const entryOffset = ifdOffset + 2 + i * 12;
+    const tag = readU16(exifBuffer, entryOffset);
 
-        const ifdOffset = readU32(tiffData, 4);
-        const entryCount = readU16(tiffData, ifdOffset);
-
-        for (let i = 0; i < entryCount; i++) {
-          const entryOffset = ifdOffset + 2 + i * 12;
-          const tag = readU16(tiffData, entryOffset);
-
-          if (tag === 0x010e) {
-            // ImageDescription
-            const count = readU32(tiffData, entryOffset + 4);
-            const valueOffset = readU32(tiffData, entryOffset + 8);
-            const descBytes = tiffData.subarray(valueOffset, valueOffset + count - 1); // -1 for null terminator
-            return descBytes.toString("utf-8");
-          }
-        }
-      }
-      break;
-    } else if (marker === 0xd8 || marker === 0xd9) {
-      offset += 2;
-      continue;
-    } else {
-      const segmentSize = buffer.readUInt16BE(offset + 2);
-      offset += 2 + segmentSize;
-      continue;
+    if (tag === 0x010e) {
+      // ImageDescription
+      const count = readU32(exifBuffer, entryOffset + 4);
+      const valueOffset = readU32(exifBuffer, entryOffset + 8);
+      const descBytes = exifBuffer.subarray(valueOffset, valueOffset + count - 1); // -1 for null terminator
+      return descBytes.toString("utf-8");
     }
   }
 
@@ -95,15 +64,19 @@ imageRouter.get("/images/:imageId/alt", async (req, res) => {
 
   // DBにaltがない場合、画像ファイルのEXIFから取得
   for (const base of [UPLOAD_PATH, PUBLIC_PATH]) {
-    const filePath = path.resolve(base, `images/${imageId}.jpg`);
-    try {
-      const buffer = await fs.readFile(filePath);
-      const alt = extractImageDescription(buffer);
-      if (alt) {
-        return res.status(200).type("application/json").send({ alt });
+    for (const ext of ["webp", "jpg"]) {
+      const filePath = path.resolve(base, `images/${imageId}.${ext}`);
+      try {
+        const metadata = await sharp(filePath).metadata();
+        if (metadata.exif) {
+          const alt = extractImageDescriptionFromExif(metadata.exif);
+          if (alt) {
+            return res.status(200).type("application/json").send({ alt });
+          }
+        }
+      } catch {
+        // continue
       }
-    } catch {
-      // continue
     }
   }
 
@@ -122,12 +95,22 @@ imageRouter.post("/images", async (req, res) => {
     throw new httpErrors.BadRequest();
   }
 
-  // Convert any image format to JPEG using sharp, preserving EXIF metadata
-  let jpegBuffer: Buffer;
+  // EXIFからImageDescriptionを抽出（変換前のオリジナルから取得）
+  let alt = "";
   try {
-    jpegBuffer = await sharp(req.body)
-      .withMetadata()
-      .jpeg({ quality: 80 })
+    const metadata = await sharp(req.body).metadata();
+    if (metadata.exif) {
+      alt = extractImageDescriptionFromExif(metadata.exif);
+    }
+  } catch {
+    // EXIF抽出失敗は無視
+  }
+
+  // Convert any image format directly to WebP
+  let webpBuffer: Buffer;
+  try {
+    webpBuffer = await sharp(req.body)
+      .webp({ quality: 75 })
       .toBuffer();
   } catch {
     throw new httpErrors.BadRequest("Unsupported image format");
@@ -137,10 +120,7 @@ imageRouter.post("/images", async (req, res) => {
 
   const filePath = path.resolve(UPLOAD_PATH, `./images/${imageId}.${EXTENSION}`);
   await fs.mkdir(path.resolve(UPLOAD_PATH, "images"), { recursive: true });
-  await fs.writeFile(filePath, jpegBuffer);
-
-  // EXIFからImageDescriptionを抽出
-  const alt = extractImageDescription(jpegBuffer);
+  await fs.writeFile(filePath, webpBuffer);
 
   return res.status(200).type("application/json").send({ id: imageId, alt });
 });

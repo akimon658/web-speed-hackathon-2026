@@ -1,5 +1,5 @@
 export function getImagePath(imageId: string): string {
-  return `/images/${imageId}.jpg?w=800&format=webp`;
+  return `/images/${imageId}.webp?w=800&format=webp`;
 }
 
 export function getMoviePath(movieId: string): string {
@@ -15,5 +15,5 @@ export function getSoundPeaksPath(soundId: string): string {
 }
 
 export function getProfileImagePath(profileImageId: string): string {
-  return `/images/profiles/${profileImageId}.jpg?w=128&format=webp`;
+  return `/images/profiles/${profileImageId}.webp?w=128&format=webp`;
 }
