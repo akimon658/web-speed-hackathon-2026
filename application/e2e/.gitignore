@@ -1,2 +1,3 @@
 test-results
 src/**/*.png
+!src/**/*-snapshots/*.png

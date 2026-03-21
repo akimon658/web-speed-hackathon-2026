@@ -75,7 +75,16 @@ jobs:
           cache-dependency-path: |
             head/application/pnpm-lock.yaml
 
-      # --- Base branch: generate baseline snapshots (only if not committed) ---
+      # --- Install HEAD dependencies and Playwright (needed for both baseline generation and VRT) ---
+      - name: Install dependencies (head)
+        working-directory: head/application
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers (head)
+        working-directory: head/application
+        run: pnpm --filter @web-speed-hackathon-2026/e2e exec playwright install --with-deps chromium
+
+      # --- Base branch: build app and generate baseline snapshots using HEAD's test code ---
       - name: Install dependencies (base)
         if: steps.check-baseline.outputs.has_baseline != 'true'
         working-directory: base/application
@@ -88,17 +97,14 @@ jobs:
         env:
           NODE_ENV: production
 
-      - name: Install Playwright browsers (base)
+      - name: Generate baseline snapshots
         if: steps.check-baseline.outputs.has_baseline != 'true'
-        working-directory: base/application
-        run: pnpm --filter @web-speed-hackathon-2026/e2e exec playwright install --with-deps chromium
-
-      - name: Generate baseline snapshots (base)
-        if: steps.check-baseline.outputs.has_baseline != 'true'
-        working-directory: base/application
         run: |
+          # Start the base (initial commit) server
+          cd base/application
           pnpm start &
           SERVER_PID=$!
+          cd ../..
 
           # Wait for server to be ready
           for i in $(seq 1 60); do
@@ -114,23 +120,14 @@ jobs:
             sleep 2
           done
 
+          # Run HEAD's test code against the base server to generate baselines
+          cd head/application
           pnpm --filter @web-speed-hackathon-2026/e2e exec playwright test --update-snapshots || true
 
           kill $SERVER_PID 2>/dev/null || true
           wait $SERVER_PID 2>/dev/null || true
         env:
           E2E_WORKERS: "2"
-
-      - name: Copy baseline snapshots to head
-        if: steps.check-baseline.outputs.has_baseline != 'true'
-        run: |
-          # Copy generated baseline snapshots from base to head
-          find base/application/e2e/src -name "*-snapshots" -type d | while read dir; do
-            relative="${dir#base/application/e2e/}"
-            target="head/application/e2e/${relative}"
-            mkdir -p "$target"
-            cp -r "$dir"/* "$target"/ 2>/dev/null || true
-          done
 
       - name: Commit baseline snapshots
         if: steps.check-baseline.outputs.has_baseline != 'true'
@@ -148,19 +145,11 @@ jobs:
           fi
 
       # --- PR branch: run VRT against baseline ---
-      - name: Install dependencies (head)
-        working-directory: head/application
-        run: pnpm install --frozen-lockfile
-
       - name: Build client (head)
         working-directory: head/application
         run: pnpm build
         env:
           NODE_ENV: production
-
-      - name: Install Playwright browsers (head)
-        working-directory: head/application
-        run: pnpm --filter @web-speed-hackathon-2026/e2e exec playwright install --with-deps chromium
 
       - name: Run VRT (head)
         id: vrt
