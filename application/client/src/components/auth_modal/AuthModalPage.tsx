@@ -8,12 +8,11 @@ import { ModalErrorMessage } from "@web-speed-hackathon-2026/client/src/componen
 import { ModalSubmitButton } from "@web-speed-hackathon-2026/client/src/components/modal/ModalSubmitButton";
 
 interface Props {
-  headingId?: string;
   onRequestCloseModal: () => void;
   onSubmit: (values: AuthFormData) => Promise<void>;
 }
 
-export const AuthModalPage = ({ headingId, onRequestCloseModal, onSubmit }: Props) => {
+export const AuthModalPage = ({ onRequestCloseModal, onSubmit }: Props) => {
   const [values, setValues] = useState<AuthFormData>({
     type: "signin",
     username: "",
@@ -57,7 +56,7 @@ export const AuthModalPage = ({ headingId, onRequestCloseModal, onSubmit }: Prop
 
   return (
     <form className="grid gap-y-6" onSubmit={handleSubmit}>
-      <h2 id={headingId} className="text-center text-2xl font-bold">
+      <h2 className="text-center text-2xl font-bold">
         {type === "signin" ? "サインイン" : "新規登録"}
       </h2>
 

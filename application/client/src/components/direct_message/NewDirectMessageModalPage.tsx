@@ -9,11 +9,10 @@ import { validate } from "@web-speed-hackathon-2026/client/src/direct_message/va
 
 interface Props {
   id: string;
-  headingId?: string;
   onSubmit: (values: NewDirectMessageFormData) => Promise<void>;
 }
 
-export const NewDirectMessageModalPage = ({ id, headingId, onSubmit }: Props) => {
+export const NewDirectMessageModalPage = ({ id, onSubmit }: Props) => {
   const [values, setValues] = useState<NewDirectMessageFormData>({ username: "" });
   const [touched, setTouched] = useState<Partial<Record<keyof NewDirectMessageFormData, boolean>>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -49,7 +48,7 @@ export const NewDirectMessageModalPage = ({ id, headingId, onSubmit }: Props) =>
 
   return (
     <div className="grid gap-y-6">
-      <h2 id={headingId} className="text-center text-2xl font-bold">新しくDMを始める</h2>
+      <h2 className="text-center text-2xl font-bold">新しくDMを始める</h2>
 
       <form className="flex flex-col gap-y-6" onSubmit={handleSubmit}>
         <FormInputField

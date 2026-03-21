@@ -5,10 +5,13 @@ interface Props {
 }
 
 export const Timeline = ({ timeline }: Props) => {
+  let firstImagePriorityGiven = false;
   return (
     <section>
-      {timeline.map((post, idx) => {
-        return <TimelineItem key={post.id} post={post} priority={idx === 0} />;
+      {timeline.map((post) => {
+        const shouldPrioritize = !firstImagePriorityGiven && post.images?.length > 0;
+        if (shouldPrioritize) firstImagePriorityGiven = true;
+        return <TimelineItem key={post.id} post={post} priority={shouldPrioritize} />;
       })}
     </section>
   );

@@ -5,7 +5,7 @@ import history from "connect-history-api-fallback";
 import { Router } from "express";
 import serveStatic from "serve-static";
 
-import { DirectMessageConversation, Post } from "@web-speed-hackathon-2026/server/src/models";
+import { Post } from "@web-speed-hackathon-2026/server/src/models";
 import {
   CLIENT_DIST_PATH,
   PUBLIC_PATH,
@@ -55,7 +55,7 @@ staticRouter.get("/", async (_req, res, next) => {
     let html = template;
 
     // 初期投稿データを取得（TBT削減のため少数に）
-    const posts = await Post.findAll({ limit: 5 });
+    const posts = await Post.findAll({ limit: 10 });
     const postsJSON = JSON.stringify(posts);
 
     // LCP画像のプリロードリンクを生成
@@ -107,36 +107,6 @@ staticRouter.get("/posts/:postId", async (req, res, next) => {
       }
 
       html = html.replace("</body>", `<script>window.__INITIAL_POST__=${postJSON}</script>\n</body>`);
-    }
-
-    res.type("html").send(html);
-  } catch (_e) {
-    return next();
-  }
-});
-
-// DM詳細ページ用: 初期データをHTMLに注入
-staticRouter.get("/dm/:conversationId", async (req, res, next) => {
-  try {
-    const template = getHtmlTemplate();
-    if (template === null) {
-      return next();
-    }
-
-    let html = template;
-
-    if (req.session.userId) {
-      const { Op } = await import("sequelize");
-      const conversation = await DirectMessageConversation.findOne({
-        where: {
-          id: req.params.conversationId,
-          [Op.or]: [{ initiatorId: req.session.userId }, { memberId: req.session.userId }],
-        },
-      });
-      if (conversation !== null) {
-        const conversationJSON = JSON.stringify(conversation);
-        html = html.replace("</body>", `<script>window.__INITIAL_DM_CONVERSATION__=${conversationJSON}</script>\n</body>`);
-      }
     }
 
     res.type("html").send(html);
