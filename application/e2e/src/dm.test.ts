@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test";
 import { login, scrollEntire, waitForPageToLoad } from "./utils";
 
 test.describe("DM一覧", () => {
+  test.describe.configure({ mode: "serial" });
+
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
   });
