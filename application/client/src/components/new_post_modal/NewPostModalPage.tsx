@@ -135,7 +135,7 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
         disabled={isLoading || params.text === ""}
         loading={isLoading}
       >
-        {isLoading ? "投稿中" : "投稿する"}
+        {isLoading ? "変換中" : "投稿する"}
       </ModalSubmitButton>
 
       <ModalErrorMessage>
