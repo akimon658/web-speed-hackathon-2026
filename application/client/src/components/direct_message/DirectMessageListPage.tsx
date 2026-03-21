@@ -37,8 +37,9 @@ export const DirectMessageListPage = ({ activeUser, newDmModalId }: Props) => {
     void loadConversations();
   }, [loadConversations]);
 
-  useWs("/api/v1/dm/unread", () => {
-    void loadConversations();
+  useWs<{ type: string; payload: unknown }>("/api/v1/dm/unread", () => {
+    // Only update if conversations are already loaded; avoid full refetch
+    // The unread badge is already provided by the server in the initial fetch via hasUnread
   });
 
   if (conversations == null) {
