@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 
 import { Modal } from "@web-speed-hackathon-2026/client/src/components/modal/Modal";
 import { NewPostModalPage } from "@web-speed-hackathon-2026/client/src/components/new_post_modal/NewPostModalPage";
+import { compressImage } from "@web-speed-hackathon-2026/client/src/utils/compress_image";
 import { sendFile, sendJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
 
 interface SubmitParams {
@@ -17,7 +18,8 @@ async function sendNewPost({ images, movie, sound, text }: SubmitParams): Promis
     images: images
       ? await Promise.all(
           images.map(async (image) => {
-            const result = await sendFile<{ id: string; alt: string }>("/api/v1/images", image);
+            const compressed = await compressImage(image);
+            const result = await sendFile<{ id: string; alt: string }>("/api/v1/images", compressed);
             return { id: result.id, alt: result.alt };
           }),
         )
