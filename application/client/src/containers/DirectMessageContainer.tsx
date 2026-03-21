@@ -20,6 +20,7 @@ interface DmTypingEvent {
 
 const TYPING_INDICATOR_DURATION_MS = 10 * 1000;
 const TYPING_THROTTLE_MS = 3000;
+const MESSAGES_LIMIT = 30;
 
 interface Props {
   activeUser: Models.User | null;
@@ -31,11 +32,15 @@ export const DirectMessageContainer = ({ activeUser, authModalId }: Props) => {
 
   const [conversation, setConversation] = useState<Models.DirectMessageConversation | null>(null);
   const [conversationError, setConversationError] = useState<Error | null>(null);
+  const [messages, setMessages] = useState<Models.DirectMessage[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isPeerTyping, setIsPeerTyping] = useState(false);
   const peerTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingSentRef = useRef<number>(0);
+  const offsetRef = useRef(0);
 
   const loadConversation = useCallback(async () => {
     if (activeUser == null) {
@@ -54,28 +59,65 @@ export const DirectMessageContainer = ({ activeUser, authModalId }: Props) => {
     }
   }, [activeUser, conversationId]);
 
+  const loadMessages = useCallback(async () => {
+    if (activeUser == null) {
+      return;
+    }
+
+    try {
+      const data = await fetchJSON<Models.DirectMessage[]>(
+        `/api/v1/dm/${conversationId}/messages?limit=${MESSAGES_LIMIT}&offset=0`,
+      );
+      setMessages(data);
+      offsetRef.current = data.length;
+      setHasMore(data.length >= MESSAGES_LIMIT);
+    } catch {
+      // conversation error will handle display
+    }
+  }, [activeUser, conversationId]);
+
+  const fetchMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+    try {
+      const data = await fetchJSON<Models.DirectMessage[]>(
+        `/api/v1/dm/${conversationId}/messages?limit=${MESSAGES_LIMIT}&offset=${offsetRef.current}`,
+      );
+      setMessages((prev) => [...data, ...prev]);
+      offsetRef.current += data.length;
+      setHasMore(data.length >= MESSAGES_LIMIT);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [conversationId, isLoadingMore, hasMore]);
+
   const sendRead = useCallback(async () => {
     await sendJSON(`/api/v1/dm/${conversationId}/read`, {});
   }, [conversationId]);
 
   useEffect(() => {
     void loadConversation();
+    void loadMessages();
     void sendRead();
-  }, [loadConversation, sendRead]);
+  }, [loadConversation, loadMessages, sendRead]);
 
   const handleSubmit = useCallback(
     async (params: DirectMessageFormData) => {
       setIsSubmitting(true);
       try {
-        await sendJSON(`/api/v1/dm/${conversationId}/messages`, {
+        const message = await sendJSON<Models.DirectMessage>(`/api/v1/dm/${conversationId}/messages`, {
           body: params.body,
         });
-        loadConversation();
+        setMessages((prev) => [...prev, message]);
+        offsetRef.current += 1;
       } finally {
         setIsSubmitting(false);
       }
     },
-    [conversationId, loadConversation],
+    [conversationId],
   );
 
   const handleTyping = useCallback(async () => {
@@ -89,15 +131,21 @@ export const DirectMessageContainer = ({ activeUser, authModalId }: Props) => {
 
   useWs(`/api/v1/dm/${conversationId}`, (event: DmUpdateEvent | DmTypingEvent) => {
     if (event.type === "dm:conversation:message") {
-      void loadConversation().then(() => {
-        if (event.payload.sender.id !== activeUser?.id) {
-          setIsPeerTyping(false);
-          if (peerTypingTimeoutRef.current !== null) {
-            clearTimeout(peerTypingTimeoutRef.current);
-          }
-          peerTypingTimeoutRef.current = null;
+      const newMessage = event.payload;
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === newMessage.id)) {
+          return prev.map((m) => (m.id === newMessage.id ? newMessage : m));
         }
+        offsetRef.current += 1;
+        return [...prev, newMessage];
       });
+      if (newMessage.sender.id !== activeUser?.id) {
+        setIsPeerTyping(false);
+        if (peerTypingTimeoutRef.current !== null) {
+          clearTimeout(peerTypingTimeoutRef.current);
+        }
+        peerTypingTimeoutRef.current = null;
+      }
       void sendRead();
     } else if (event.type === "dm:conversation:typing") {
       setIsPeerTyping(true);
@@ -137,10 +185,14 @@ export const DirectMessageContainer = ({ activeUser, authModalId }: Props) => {
       <DirectMessagePage
         conversationError={conversationError}
         conversation={conversation}
+        messages={messages}
         activeUser={activeUser}
         onTyping={handleTyping}
         isPeerTyping={isPeerTyping}
         isSubmitting={isSubmitting}
+        isLoadingMore={isLoadingMore}
+        hasMore={hasMore}
+        fetchMore={fetchMore}
         onSubmit={handleSubmit}
       />
     </>

@@ -100,7 +100,7 @@ directMessageRouter.get("/dm/:conversationId", async (req, res) => {
     throw new httpErrors.Unauthorized();
   }
 
-  const conversation = await DirectMessageConversation.findOne({
+  const conversation = await DirectMessageConversation.scope("withoutMessages").findOne({
     where: {
       id: req.params.conversationId,
       [Op.or]: [{ initiatorId: req.session.userId }, { memberId: req.session.userId }],
@@ -148,6 +148,34 @@ directMessageRouter.ws("/dm/:conversationId", async (req, _res) => {
   req.ws.on("close", () => {
     eventhub.off(`dm:conversation/${conversation.id}:typing/${peerId}`, handleTyping);
   });
+});
+
+directMessageRouter.get("/dm/:conversationId/messages", async (req, res) => {
+  if (req.session.userId === undefined) {
+    throw new httpErrors.Unauthorized();
+  }
+
+  const conversation = await DirectMessageConversation.findOne({
+    where: {
+      id: req.params.conversationId,
+      [Op.or]: [{ initiatorId: req.session.userId }, { memberId: req.session.userId }],
+    },
+  });
+  if (conversation === null) {
+    throw new httpErrors.NotFound();
+  }
+
+  const limit = Math.min(Math.max(Number(req.query["limit"]) || 30, 1), 100);
+  const offset = Math.max(Number(req.query["offset"]) || 0, 0);
+
+  const messages = await DirectMessage.findAll({
+    where: { conversationId: conversation.id },
+    order: [["createdAt", "DESC"]],
+    limit,
+    offset,
+  });
+
+  return res.status(200).type("application/json").send(messages.reverse());
 });
 
 directMessageRouter.post("/dm/:conversationId/messages", async (req, res) => {
