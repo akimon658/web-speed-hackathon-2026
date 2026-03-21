@@ -6,12 +6,14 @@ import { Comment, Post } from "@web-speed-hackathon-2026/server/src/models";
 export const postRouter = Router();
 
 postRouter.get("/posts", async (req, res) => {
-  const posts = await Post.findAll({
-    limit: req.query["limit"] != null ? Number(req.query["limit"]) : undefined,
-    offset: req.query["offset"] != null ? Number(req.query["offset"]) : undefined,
-  });
+  const limit = req.query["limit"] != null ? Number(req.query["limit"]) : undefined;
+  const offset = req.query["offset"] != null ? Number(req.query["offset"]) : undefined;
 
-  return res.status(200).type("application/json").send(posts);
+  const posts = await Post.findAll();
+
+  const result = posts.slice(offset || 0, (offset || 0) + (limit || posts.length));
+
+  return res.status(200).type("application/json").send(result);
 });
 
 postRouter.get("/posts/:postId", async (req, res) => {
