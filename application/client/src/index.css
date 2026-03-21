@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Rei no Are Mincho";
+  font-display: block;
+  src: local("Noto Serif JP"), local("Noto Serif JP ExtraLight"), local("NotoSerifJP-ExtraLight");
+  font-weight: normal;
+  ascent-override: 164.6%;
+  descent-override: 40.9%;
+}
+
+@font-face {
+  font-family: "Rei no Are Mincho";
+  font-display: block;
+  src: local("Noto Serif JP"), local("Noto Serif JP ExtraLight"), local("NotoSerifJP-ExtraLight");
+  font-weight: bold;
+  ascent-override: 164.6%;
+  descent-override: 40.9%;
+}
+
 @layer base {
   button:not(:disabled),
   [role="button"]:not(:disabled) {
