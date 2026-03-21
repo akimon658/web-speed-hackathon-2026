@@ -28,7 +28,7 @@ async function findImageFile(relativePath: string): Promise<string | null> {
 export const imageOptimizerRouter = Router();
 
 // Intercept requests for image files and serve optimized versions
-imageOptimizerRouter.get(/^\/(images\/.+\.jpg)$/, async (req, res, next) => {
+imageOptimizerRouter.get(/^\/(images\/.+\.(jpg|webp))$/, async (req, res, next) => {
   const relativePath = req.params[0];
   if (!relativePath) {
     return next();

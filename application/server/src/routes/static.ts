@@ -63,7 +63,7 @@ staticRouter.get("/", async (_req, res, next) => {
     const firstImage = firstPostWithImage ? (firstPostWithImage.toJSON() as any).images?.[0] : null;
     let preloadLinks = "";
     if (firstImage) {
-      preloadLinks += `<link rel="preload" as="image" href="/images/${firstImage.id}.jpg?w=800&format=webp" type="image/webp">`;
+      preloadLinks += `<link rel="preload" as="image" href="/images/${firstImage.id}.webp?w=800&format=webp" type="image/webp">`;
     }
 
     // headにプリロードリンクを注入
@@ -107,7 +107,7 @@ staticRouter.get("/posts/:postId", async (req, res, next) => {
       let preloadLinks = "";
       const firstImage = postData.images?.[0];
       if (firstImage) {
-        preloadLinks += `<link rel="preload" as="image" href="/images/${firstImage.id}.jpg?w=800&format=webp" type="image/webp">`;
+        preloadLinks += `<link rel="preload" as="image" href="/images/${firstImage.id}.webp?w=800&format=webp" type="image/webp">`;
       }
 
       if (preloadLinks) {
