@@ -28,7 +28,7 @@ export function useInfiniteFetch<T>(
   const [result, setResult] = useState<Omit<ReturnValues<T>, "fetchMore">>(() => {
     const initialData = consumeInitialData<T>(apiPath);
     if (initialData) {
-      const newHasMore = initialData.length >= LIMIT;
+      const newHasMore = initialData.length > 0;
       internalRef.current = {
         isLoading: false,
         offset: initialData.length,

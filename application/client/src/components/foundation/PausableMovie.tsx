@@ -39,7 +39,11 @@ export const PausableMovie = ({ src }: Props) => {
   }, []);
 
   if (!isInViewport) {
-    return <div ref={inViewRef} className="h-full w-full" />;
+    return (
+      <AspectRatioBox aspectHeight={1} aspectWidth={1}>
+        <div ref={inViewRef} className="h-full w-full" />
+      </AspectRatioBox>
+    );
   }
 
   return (

@@ -53,6 +53,8 @@ export const CoveredImage = ({ imageId, src, priority = false }: Props) => {
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : undefined}
         src={src}
+        width={800}
+        height={450}
       />
 
       <button

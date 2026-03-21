@@ -31,7 +31,6 @@ app.use((_req, res, next) => {
   } else {
     res.header({
       "Cache-Control": "max-age=0, no-transform",
-      Connection: "close",
     });
   }
   return next();

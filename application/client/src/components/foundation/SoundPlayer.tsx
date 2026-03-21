@@ -41,7 +41,7 @@ export const SoundPlayer = ({ sound }: Props) => {
   }, []);
 
   if (isLoading || peaksData === null) {
-    return <div ref={inViewRef} className="w-full" style={{ minHeight: "5rem" }} />;
+    return <div ref={inViewRef} className="bg-cax-surface-subtle w-full" style={{ height: "5rem" }} />;
   }
 
   return (

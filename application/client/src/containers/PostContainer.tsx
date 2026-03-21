@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Helmet } from "react-helmet";
 import { useParams } from "react-router";
 
@@ -8,18 +9,30 @@ import { useFetch } from "@web-speed-hackathon-2026/client/src/hooks/use_fetch";
 import { useInfiniteFetch } from "@web-speed-hackathon-2026/client/src/hooks/use_infinite_fetch";
 import { fetchJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
 
+function consumeInitialPost(): Models.Post | null {
+  if ((window as any).__INITIAL_POST__) {
+    const data = (window as any).__INITIAL_POST__ as Models.Post;
+    delete (window as any).__INITIAL_POST__;
+    return data;
+  }
+  return null;
+}
+
 const PostContainerContent = ({ postId }: { postId: string | undefined }) => {
-  const { data: post, isLoading: isLoadingPost } = useFetch<Models.Post>(
+  const initialPostRef = useRef(consumeInitialPost());
+  const { data: fetchedPost, isLoading: isLoadingPost } = useFetch<Models.Post>(
     `/api/v1/posts/${postId}`,
     fetchJSON,
+    initialPostRef.current == null,
   );
+  const post = initialPostRef.current ?? fetchedPost;
 
   const { data: comments, fetchMore, hasMore } = useInfiniteFetch<Models.Comment>(
     `/api/v1/posts/${postId}/comments`,
     fetchJSON,
   );
 
-  if (isLoadingPost) {
+  if (isLoadingPost && initialPostRef.current == null) {
     return (
       <Helmet>
         <title>読込中 - CaX</title>
