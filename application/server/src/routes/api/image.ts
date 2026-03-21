@@ -85,6 +85,8 @@ export const imageRouter = Router();
 imageRouter.get("/images/:imageId/alt", async (req, res) => {
   const { imageId } = req.params;
 
+  res.header("Cache-Control", "public, max-age=31536000, immutable");
+
   // まずDBからaltを取得
   const image = await Image.findByPk(imageId, { attributes: ["id", "alt"] });
   if (image && image.alt) {
