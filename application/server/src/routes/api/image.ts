@@ -89,11 +89,11 @@ imageRouter.post("/images", async (req, res) => {
     // EXIF抽出失敗は無視
   }
 
-  // Convert any image format directly to WebP
+  // Convert to WebP and resize to max 800px width
   let webpBuffer: Buffer;
   try {
     webpBuffer = await sharp(req.body)
-      .withMetadata()
+      .resize({ width: 800, withoutEnlargement: true })
       .webp({ quality: 75 })
       .toBuffer();
   } catch {

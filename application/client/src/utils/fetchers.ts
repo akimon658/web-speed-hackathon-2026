@@ -20,7 +20,7 @@ export async function fetchJSON<T>(url: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function sendFile<T>(url: string, file: File): Promise<T> {
+export async function sendFile<T>(url: string, file: File | Blob): Promise<T> {
   const response = await fetch(url, {
     method: "POST",
     headers: {
