@@ -68,8 +68,6 @@ userRouter.get("/users/:username/posts", async (req, res) => {
     },
   });
 
-  posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
   const result = posts.slice(offset || 0, (offset || 0) + (limit || posts.length));
 
   return res.status(200).type("application/json").send(result);

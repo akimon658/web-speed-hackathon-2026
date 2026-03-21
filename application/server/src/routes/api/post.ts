@@ -11,8 +11,6 @@ postRouter.get("/posts", async (req, res) => {
 
   const posts = await Post.findAll();
 
-  posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
   const result = posts.slice(offset || 0, (offset || 0) + (limit || posts.length));
 
   return res.status(200).type("application/json").send(result);
