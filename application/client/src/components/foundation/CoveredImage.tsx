@@ -1,11 +1,11 @@
-import { MouseEvent, useCallback, useId } from "react";
+import { MouseEvent, useCallback, useId, useRef, useState } from "react";
 
 import { Button } from "@web-speed-hackathon-2026/client/src/components/foundation/Button";
 import { Modal } from "@web-speed-hackathon-2026/client/src/components/modal/Modal";
 import { useInViewport } from "@web-speed-hackathon-2026/client/src/hooks/use_in_viewport";
 
 interface Props {
-  alt: string;
+  imageId: string;
   src: string;
   priority?: boolean;
 }
@@ -13,12 +13,31 @@ interface Props {
 /**
  * アスペクト比を維持したまま、要素のコンテンツボックス全体を埋めるように画像を拡大縮小します
  */
-export const CoveredImage = ({ alt, src, priority = false }: Props) => {
+export const CoveredImage = ({ imageId, src, priority = false }: Props) => {
   const dialogId = useId();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [alt, setAlt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
   // ダイアログの背景をクリックしたときに投稿詳細ページに遷移しないようにする
   const handleDialogClick = useCallback((ev: MouseEvent<HTMLDialogElement>) => {
     ev.stopPropagation();
   }, []);
+
+  const handleShowAlt = useCallback(async () => {
+    dialogRef.current?.showModal();
+    if (alt !== null) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/v1/images/${imageId}/alt`);
+      const data = await res.json() as { alt: string };
+      setAlt(data.alt);
+    } catch {
+      setAlt("");
+    } finally {
+      setLoading(false);
+    }
+  }, [alt, imageId]);
 
   const { ref: inViewRef, isInViewport } = useInViewport();
 
@@ -29,7 +48,7 @@ export const CoveredImage = ({ alt, src, priority = false }: Props) => {
   return (
     <div className="relative h-full w-full overflow-hidden">
       <img
-        alt={alt}
+        alt=""
         className="h-full w-full object-cover"
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : undefined}
@@ -39,17 +58,16 @@ export const CoveredImage = ({ alt, src, priority = false }: Props) => {
       <button
         className="border-cax-border bg-cax-surface-raised/90 text-cax-text-muted hover:bg-cax-surface absolute right-1 bottom-1 rounded-full border px-2 py-1 text-center text-xs"
         type="button"
-        command="show-modal"
-        commandfor={dialogId}
+        onClick={handleShowAlt}
       >
         ALT を表示する
       </button>
 
-      <Modal id={dialogId} closedby="any" onClick={handleDialogClick}>
+      <Modal ref={dialogRef} id={dialogId} closedby="any" onClick={handleDialogClick}>
         <div className="grid gap-y-6">
           <h1 className="text-center text-2xl font-bold">画像の説明</h1>
 
-          <p className="text-sm">{alt}</p>
+          <p className="text-sm">{loading ? "読み込み中..." : (alt ?? "")}</p>
 
           <Button variant="secondary" command="close" commandfor={dialogId}>
             閉じる

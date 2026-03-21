@@ -26,7 +26,6 @@ declare namespace Models {
   }
 
   interface Image {
-    alt: string;
     id: string;
   }
 
