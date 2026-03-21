@@ -168,8 +168,14 @@ directMessageRouter.get("/dm/:conversationId/messages", async (req, res) => {
   const limit = Math.min(Math.max(Number(req.query["limit"]) || 30, 1), 100);
   const offset = Math.max(Number(req.query["offset"]) || 0, 0);
 
-  const messages = await DirectMessage.findAll({
+  const messages = await DirectMessage.unscoped().findAll({
     where: { conversationId: conversation.id },
+    include: [
+      {
+        association: "sender",
+        include: [{ association: "profileImage" }],
+      },
+    ],
     order: [["createdAt", "DESC"]],
     limit,
     offset,
