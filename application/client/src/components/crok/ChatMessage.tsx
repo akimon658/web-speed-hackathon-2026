@@ -3,7 +3,7 @@ import "katex/dist/katex.min.css";
 
 import { useDeferredValue, useMemo } from "react";
 
-import { renderMarkdownLight } from "@web-speed-hackathon-2026/client/src/lib/markdown_light";
+import { renderMarkdown } from "@web-speed-hackathon-2026/client/src/lib/markdown";
 import { TypingIndicator } from "@web-speed-hackathon-2026/client/src/components/crok/TypingIndicator";
 import { CrokLogo } from "@web-speed-hackathon-2026/client/src/components/foundation/CrokLogo";
 
@@ -27,7 +27,7 @@ const AssistantMessage = ({ content, streaming = false }: { content: string; str
   // Skip expensive markdown rendering while streaming to reduce TBT
   const html = useMemo(() => {
     if (streaming) return "";
-    return renderMarkdownLight(deferredContent);
+    return renderMarkdown(deferredContent);
   }, [deferredContent, streaming]);
 
   return (

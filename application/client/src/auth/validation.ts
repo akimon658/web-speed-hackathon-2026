@@ -11,7 +11,7 @@ export const validate = (values: AuthFormData): Partial<Record<keyof AuthFormDat
     errors.name = "名前を入力してください";
   }
 
-  if (normalizedPassword.length >= 16 && /^[\p{Letter}\p{Number}]+$/v.test(normalizedPassword)) {
+  if (/^[\p{Letter}\p{Number}]*$/v.test(normalizedPassword) && normalizedPassword.length > 0) {
     errors.password = "パスワードには記号を含める必要があります";
   }
   if (normalizedPassword.length === 0) {
