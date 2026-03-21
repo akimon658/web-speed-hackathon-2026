@@ -73,11 +73,25 @@ export const DirectMessagePage = ({
   );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
+  // Scroll to bottom on initial load and when new messages arrive
   useEffect(() => {
-    // Scroll to bottom when conversation changes
     messagesEndRef.current?.scrollIntoView();
   }, [conversation.messages.length]);
+
+  // Observe the messages container (not document.body) for resize to scroll to bottom
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver(() => {
+      messagesEndRef.current?.scrollIntoView();
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   if (conversationError != null) {
     return (
@@ -107,7 +121,7 @@ export const DirectMessagePage = ({
         </div>
       </header>
 
-      <div className="bg-cax-surface-subtle flex-1 space-y-4 overflow-y-auto px-4 pt-4 pb-8">
+      <div ref={messagesContainerRef} className="bg-cax-surface-subtle flex-1 space-y-4 overflow-y-auto px-4 pt-4 pb-8">
         {conversation.messages.length === 0 && (
           <p className="text-cax-text-muted text-center text-sm">
             まだメッセージはありません。最初のメッセージを送信してみましょう。
