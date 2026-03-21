@@ -1,6 +1,6 @@
 import { Router } from "express";
 import httpErrors from "http-errors";
-import { col, where, Op } from "sequelize";
+import { Op } from "sequelize";
 
 import { eventhub } from "@web-speed-hackathon-2026/server/src/eventhub";
 import {
@@ -36,12 +36,12 @@ directMessageRouter.get("/dm", async (req, res) => {
           : conversation.memberId;
 
       const [lastMessage, unreadCount] = await Promise.all([
-        DirectMessage.findOne({
+        DirectMessage.scope(null).findOne({
           where: { conversationId: conversation.id },
           order: [["createdAt", "DESC"]],
           include: [{ association: "sender", include: [{ association: "profileImage" }] }],
         }),
-        DirectMessage.count({
+        DirectMessage.scope(null).count({
           where: { conversationId: conversation.id, senderId: peerId, isRead: false },
         }),
       ]);
