@@ -161,8 +161,8 @@ export const DirectMessagePage = ({
               </li>
             );
           })}
+          <div ref={messagesEndRef} />
         </ul>
-        <div ref={messagesEndRef} />
       </div>
 
       <div className="sticky bottom-12 z-10 lg:bottom-0">
