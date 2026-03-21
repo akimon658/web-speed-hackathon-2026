@@ -9,9 +9,10 @@ postRouter.get("/posts", async (req, res) => {
   const limit = req.query["limit"] != null ? Number(req.query["limit"]) : undefined;
   const offset = req.query["offset"] != null ? Number(req.query["offset"]) : undefined;
 
-  const posts = await Post.findAll();
-
-  const result = posts.slice(offset || 0, (offset || 0) + (limit || posts.length));
+  const result = await Post.findAll({
+    limit: limit || 30,
+    offset: offset || 0,
+  });
 
   return res.status(200).type("application/json").send(result);
 });
