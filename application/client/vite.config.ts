@@ -7,7 +7,7 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(async () => {
+export default defineConfig(async ({ mode }) => {
   const plugins: Plugin[] = [
     tailwindcss(),
     viteStaticCopy({
@@ -63,6 +63,14 @@ export default defineConfig(async () => {
           find: "bayesian-bm25",
           replacement: path.resolve(__dirname, "node_modules/bayesian-bm25/dist/index.js"),
         },
+        ...(mode === "production"
+          ? [
+              {
+                find: /react-router\/dist\/development\//,
+                replacement: "react-router/dist/production/",
+              },
+            ]
+          : []),
       ],
     },
     define: {
