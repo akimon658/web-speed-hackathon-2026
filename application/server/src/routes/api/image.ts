@@ -94,6 +94,7 @@ imageRouter.post("/images", async (req, res) => {
   try {
     webpBuffer = await sharp(req.body)
       .resize({ width: 800, withoutEnlargement: true })
+      .withMetadata()
       .webp({ quality: 75 })
       .toBuffer();
   } catch {
