@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { NewDirectMessageModalPage } from "@web-speed-hackathon-2026/client/src/components/direct_message/NewDirectMessageModalPage";
@@ -11,6 +11,7 @@ interface Props {
 }
 
 export const NewDirectMessageModalContainer = ({ id }: Props) => {
+  const headingId = useId();
   const ref = useRef<HTMLDialogElement>(null);
   const [resetKey, setResetKey] = useState(0);
   useEffect(() => {
@@ -44,8 +45,8 @@ export const NewDirectMessageModalContainer = ({ id }: Props) => {
   );
 
   return (
-    <Modal id={id} ref={ref} closedby="any">
-      <NewDirectMessageModalPage key={resetKey} id={id} onSubmit={handleSubmit} />
+    <Modal id={id} ref={ref} closedby="any" aria-labelledby={headingId}>
+      <NewDirectMessageModalPage key={resetKey} id={id} headingId={headingId} onSubmit={handleSubmit} />
     </Modal>
   );
 };

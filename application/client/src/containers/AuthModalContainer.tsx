@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { AuthFormData } from "@web-speed-hackathon-2026/client/src/auth/types";
 import { AuthModalPage } from "@web-speed-hackathon-2026/client/src/components/auth_modal/AuthModalPage";
@@ -35,6 +35,7 @@ function getErrorCode(err: unknown, type: "signin" | "signup"): string {
 }
 
 export const AuthModalContainer = ({ id, onUpdateActiveUser }: Props) => {
+  const headingId = useId();
   const ref = useRef<HTMLDialogElement>(null);
   const [resetKey, setResetKey] = useState(0);
   useEffect(() => {
@@ -75,9 +76,10 @@ export const AuthModalContainer = ({ id, onUpdateActiveUser }: Props) => {
   );
 
   return (
-    <Modal id={id} ref={ref} closedby="any">
+    <Modal id={id} ref={ref} closedby="any" aria-labelledby={headingId}>
       <AuthModalPage
         key={resetKey}
+        headingId={headingId}
         onRequestCloseModal={handleRequestCloseModal}
         onSubmit={handleSubmit}
       />

@@ -9,6 +9,15 @@ import { DirectMessageFormData } from "@web-speed-hackathon-2026/client/src/dire
 import { useWs } from "@web-speed-hackathon-2026/client/src/hooks/use_ws";
 import { fetchJSON, sendJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
 
+function consumeInitialDmConversation(): Models.DirectMessageConversation | null {
+  if ((window as any).__INITIAL_DM_CONVERSATION__) {
+    const data = (window as any).__INITIAL_DM_CONVERSATION__ as Models.DirectMessageConversation;
+    delete (window as any).__INITIAL_DM_CONVERSATION__;
+    return data;
+  }
+  return null;
+}
+
 interface DmUpdateEvent {
   type: "dm:conversation:message";
   payload: Models.DirectMessage;
@@ -29,7 +38,8 @@ interface Props {
 export const DirectMessageContainer = ({ activeUser, authModalId }: Props) => {
   const { conversationId = "" } = useParams<{ conversationId: string }>();
 
-  const [conversation, setConversation] = useState<Models.DirectMessageConversation | null>(null);
+  const initialConversationRef = useRef(consumeInitialDmConversation());
+  const [conversation, setConversation] = useState<Models.DirectMessageConversation | null>(initialConversationRef.current);
   const [conversationError, setConversationError] = useState<Error | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
