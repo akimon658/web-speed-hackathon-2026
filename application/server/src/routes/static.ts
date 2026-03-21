@@ -74,7 +74,7 @@ staticRouter.get("/", async (_req, res, next) => {
     // LCP画像をReactルートの外に配置（JS実行前にLCP達成）
     // Reactがレンダリング完了するとapp:not(:empty)になり、CSSでプレースホルダーが非表示になる
     if (firstImage) {
-      const imgSrc = `/images/${firstImage.id}.jpg?w=800&format=webp`;
+      const imgSrc = `/images/${firstImage.id}.webp?w=800&format=webp`;
       const placeholder = `<div id="lcp-placeholder" style="position:fixed;top:0;left:192px;right:0;padding:80px 16px 16px"><div style="aspect-ratio:16/9;max-width:600px;overflow:hidden;border-radius:8px"><img src="${imgSrc}" alt="" style="width:100%;height:100%;object-fit:cover" fetchpriority="high" width="800" height="450"></div></div><style>#app:not(:empty) ~ #lcp-placeholder{display:none}</style>`;
       html = html.replace('<div id="app"></div>', `<div id="app"></div>${placeholder}`);
     }
@@ -116,7 +116,7 @@ staticRouter.get("/posts/:postId", async (req, res, next) => {
 
       // LCP画像をReactルートの外に配置
       if (firstImage) {
-        const imgSrc = `/images/${firstImage.id}.jpg?w=800&format=webp`;
+        const imgSrc = `/images/${firstImage.id}.webp?w=800&format=webp`;
         const placeholder = `<div id="lcp-placeholder" style="position:fixed;top:0;left:192px;right:0;padding:80px 16px 16px"><div style="aspect-ratio:16/9;max-width:600px;overflow:hidden;border-radius:8px"><img src="${imgSrc}" alt="" style="width:100%;height:100%;object-fit:cover" fetchpriority="high" width="800" height="450"></div></div><style>#app:not(:empty) ~ #lcp-placeholder{display:none}</style>`;
         html = html.replace('<div id="app"></div>', `<div id="app"></div>${placeholder}`);
       }
