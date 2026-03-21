@@ -34,11 +34,12 @@ soundRouter.post("/sounds", async (req, res) => {
   try {
     await fs.writeFile(tmpInput, req.body);
 
+    // Extract metadata from the original file (before conversion) to preserve encoding
+    const { artist, title } = await extractMetadataFromSound(req.body);
+
     await execFileAsync("ffmpeg", ["-i", tmpInput, "-vn", "-y", tmpOutput]);
 
     const converted = await fs.readFile(tmpOutput);
-
-    const { artist, title } = await extractMetadataFromSound(converted);
 
     const filePath = path.resolve(UPLOAD_PATH, `./sounds/${soundId}.${EXTENSION}`);
     await fs.mkdir(path.resolve(UPLOAD_PATH, "sounds"), { recursive: true });
