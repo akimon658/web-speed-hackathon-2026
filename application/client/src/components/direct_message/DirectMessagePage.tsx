@@ -18,9 +18,13 @@ import { getProfileImagePath } from "@web-speed-hackathon-2026/client/src/utils/
 interface Props {
   conversationError: Error | null;
   conversation: Models.DirectMessageConversation;
+  messages: Models.DirectMessage[];
   activeUser: Models.User;
   isPeerTyping: boolean;
   isSubmitting: boolean;
+  isLoadingMore: boolean;
+  hasMore: boolean;
+  fetchMore: () => void;
   onTyping: () => void;
   onSubmit: (params: DirectMessageFormData) => Promise<void>;
 }
@@ -28,9 +32,13 @@ interface Props {
 export const DirectMessagePage = ({
   conversationError,
   conversation,
+  messages,
   activeUser,
   isPeerTyping,
   isSubmitting,
+  isLoadingMore,
+  hasMore,
+  fetchMore,
   onTyping,
   onSubmit,
 }: Props) => {
@@ -74,24 +82,68 @@ export const DirectMessagePage = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLengthRef = useRef(0);
+  const initialScrollDone = useRef(false);
 
-  // Scroll to bottom on initial load and when new messages arrive
+  // Scroll to bottom on initial load and when new messages are appended
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView();
-  }, [conversation.messages.length]);
+    if (messages.length === 0) return;
 
-  // Observe the messages container (not document.body) for resize to scroll to bottom
+    const prevLen = prevMessagesLengthRef.current;
+    const isInitialLoad = prevLen === 0;
+    const isNewMessageAppended = messages.length > prevLen && prevLen > 0;
+
+    if (isInitialLoad) {
+      messagesEndRef.current?.scrollIntoView();
+      initialScrollDone.current = true;
+    } else if (isNewMessageAppended) {
+      // New message appended at the end - always scroll to bottom (test_cases.md requirement)
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    // When older messages are prepended (messages.length increased but first message changed),
+    // scroll position is preserved via the prepend scroll logic below
+
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages]);
+
+  // Preserve scroll position when older messages are prepended
+  const prevFirstMessageIdRef = useRef<string | null>(null);
   useEffect(() => {
     const container = messagesContainerRef.current;
-    if (!container) return;
+    if (!container || messages.length === 0) return;
 
-    const observer = new ResizeObserver(() => {
-      messagesEndRef.current?.scrollIntoView();
-    });
+    const currentFirstId = messages[0]?.id ?? null;
+    const prevFirstId = prevFirstMessageIdRef.current;
 
-    observer.observe(container);
+    if (prevFirstId !== null && currentFirstId !== prevFirstId && initialScrollDone.current) {
+      // Older messages were prepended - find the element that was previously first and scroll to it
+      const prevFirstElement = container.querySelector(`[data-message-id="${prevFirstId}"]`);
+      if (prevFirstElement) {
+        prevFirstElement.scrollIntoView();
+      }
+    }
+
+    prevFirstMessageIdRef.current = currentFirstId;
+  }, [messages]);
+
+  // IntersectionObserver for loading older messages (reverse infinite scroll)
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && hasMore && !isLoadingMore && initialScrollDone.current) {
+          fetchMore();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(sentinel);
     return () => observer.disconnect();
-  }, []);
+  }, [hasMore, isLoadingMore, fetchMore]);
 
   if (conversationError != null) {
     return (
@@ -122,19 +174,27 @@ export const DirectMessagePage = ({
       </header>
 
       <div ref={messagesContainerRef} className="bg-cax-surface-subtle flex-1 space-y-4 overflow-y-auto px-4 pt-4 pb-8">
-        {conversation.messages.length === 0 && (
+        {/* Sentinel for loading older messages */}
+        <div ref={sentinelRef} />
+
+        {isLoadingMore && (
+          <p className="text-cax-text-muted text-center text-sm py-2">読み込み中...</p>
+        )}
+
+        {messages.length === 0 && !hasMore && (
           <p className="text-cax-text-muted text-center text-sm">
             まだメッセージはありません。最初のメッセージを送信してみましょう。
           </p>
         )}
 
         <ul className="grid gap-3" data-testid="dm-message-list">
-          {conversation.messages.map((message) => {
+          {messages.map((message) => {
             const isActiveUserSend = message.sender.id === activeUser.id;
 
             return (
               <li
                 key={message.id}
+                data-message-id={message.id}
                 className={classNames(
                   "flex flex-col w-full",
                   isActiveUserSend ? "items-end" : "items-start",

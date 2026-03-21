@@ -58,6 +58,14 @@ export function initDirectMessageConversation(sequelize: Sequelize) {
           },
         ],
       },
+      scopes: {
+        withoutMessages: {
+          include: [
+            { association: "initiator", include: [{ association: "profileImage" }] },
+            { association: "member", include: [{ association: "profileImage" }] },
+          ],
+        },
+      },
     },
   );
 }
