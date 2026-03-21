@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 
+import exifReader from "exif-reader";
 import { Router } from "express";
 import httpErrors from "http-errors";
 import sharp from "sharp";
@@ -13,40 +14,22 @@ import { PUBLIC_PATH, UPLOAD_PATH } from "@web-speed-hackathon-2026/server/src/p
 const EXTENSION = "webp";
 
 /**
- * raw EXIF バッファ（TIFF形式）から ImageDescription を抽出する
- * sharp の metadata().exif が返すバッファを直接パースする
+ * sharp の metadata().exif が返す raw EXIF バッファから ImageDescription を抽出する
  */
-function extractImageDescriptionFromExif(exifBuffer: Buffer): string {
-  if (exifBuffer.length < 8) {
+export function extractImageDescription(exifBuffer: Buffer): string {
+  try {
+    const parsed = exifReader(exifBuffer);
+    const desc = parsed.Image?.ImageDescription;
+    if (typeof desc === "string") {
+      return desc;
+    }
+    if (Buffer.isBuffer(desc)) {
+      return desc.toString("utf-8");
+    }
+    return "";
+  } catch {
     return "";
   }
-
-  const isBigEndian = exifBuffer[0] === 0x4d && exifBuffer[1] === 0x4d;
-
-  const readU16 = isBigEndian
-    ? (buf: Buffer, off: number) => buf.readUInt16BE(off)
-    : (buf: Buffer, off: number) => buf.readUInt16LE(off);
-  const readU32 = isBigEndian
-    ? (buf: Buffer, off: number) => buf.readUInt32BE(off)
-    : (buf: Buffer, off: number) => buf.readUInt32LE(off);
-
-  const ifdOffset = readU32(exifBuffer, 4);
-  const entryCount = readU16(exifBuffer, ifdOffset);
-
-  for (let i = 0; i < entryCount; i++) {
-    const entryOffset = ifdOffset + 2 + i * 12;
-    const tag = readU16(exifBuffer, entryOffset);
-
-    if (tag === 0x010e) {
-      // ImageDescription
-      const count = readU32(exifBuffer, entryOffset + 4);
-      const valueOffset = readU32(exifBuffer, entryOffset + 8);
-      const descBytes = exifBuffer.subarray(valueOffset, valueOffset + count - 1); // -1 for null terminator
-      return descBytes.toString("utf-8");
-    }
-  }
-
-  return "";
 }
 
 export const imageRouter = Router();
@@ -69,7 +52,7 @@ imageRouter.get("/images/:imageId/alt", async (req, res) => {
       try {
         const metadata = await sharp(filePath).metadata();
         if (metadata.exif) {
-          const alt = extractImageDescriptionFromExif(metadata.exif);
+          const alt = extractImageDescription(metadata.exif);
           if (alt) {
             return res.status(200).type("application/json").send({ alt });
           }
@@ -100,7 +83,7 @@ imageRouter.post("/images", async (req, res) => {
   try {
     const metadata = await sharp(req.body).metadata();
     if (metadata.exif) {
-      alt = extractImageDescriptionFromExif(metadata.exif);
+      alt = extractImageDescription(metadata.exif);
     }
   } catch {
     // EXIF抽出失敗は無視
@@ -110,6 +93,7 @@ imageRouter.post("/images", async (req, res) => {
   let webpBuffer: Buffer;
   try {
     webpBuffer = await sharp(req.body)
+      .withMetadata()
       .webp({ quality: 75 })
       .toBuffer();
   } catch {
