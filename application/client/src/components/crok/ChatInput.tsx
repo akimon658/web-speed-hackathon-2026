@@ -103,7 +103,7 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
     }
   }, [suggestions, showSuggestions]);
 
-  // 入力値が変わるたびにキャッシュ済みデータからフィルタリング
+  // 入力値が変わるたびにキャッシュ済みデータからフィルタリング（debounced）
   useEffect(() => {
     if (!inputValue.trim()) {
       setSuggestions([]);
@@ -117,12 +117,16 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
       return;
     }
 
-    const tokens = extractTokens(inputValue);
-    const results = filterSuggestionsBM25(candidates, tokens);
+    const timer = setTimeout(() => {
+      const tokens = extractTokens(inputValue);
+      const results = filterSuggestionsBM25(candidates, tokens);
 
-    setQueryTokens(tokens);
-    setSuggestions(results);
-    setShowSuggestions(results.length > 0);
+      setQueryTokens(tokens);
+      setSuggestions(results);
+      setShowSuggestions(results.length > 0);
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [inputValue]);
 
   const adjustTextareaHeight = () => {

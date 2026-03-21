@@ -3,12 +3,13 @@ import "katex/dist/katex.min.css";
 
 import { useDeferredValue, useMemo } from "react";
 
-import { renderMarkdown } from "@web-speed-hackathon-2026/client/src/lib/markdown";
+import { renderMarkdownLight } from "@web-speed-hackathon-2026/client/src/lib/markdown_light";
 import { TypingIndicator } from "@web-speed-hackathon-2026/client/src/components/crok/TypingIndicator";
 import { CrokLogo } from "@web-speed-hackathon-2026/client/src/components/foundation/CrokLogo";
 
 interface Props {
   message: Models.ChatMessage;
+  streaming?: boolean;
 }
 
 const UserMessage = ({ content }: { content: string }) => {
@@ -21,9 +22,13 @@ const UserMessage = ({ content }: { content: string }) => {
   );
 };
 
-const AssistantMessage = ({ content }: { content: string }) => {
+const AssistantMessage = ({ content, streaming = false }: { content: string; streaming?: boolean }) => {
   const deferredContent = useDeferredValue(content);
-  const html = useMemo(() => renderMarkdown(deferredContent), [deferredContent]);
+  // Skip expensive markdown rendering while streaming to reduce TBT
+  const html = useMemo(() => {
+    if (streaming) return "";
+    return renderMarkdownLight(deferredContent);
+  }, [deferredContent, streaming]);
 
   return (
     <div className="mb-6 flex gap-4">
@@ -33,10 +38,12 @@ const AssistantMessage = ({ content }: { content: string }) => {
       <div className="min-w-0 flex-1">
         <div className="text-cax-text mb-1 text-sm font-medium">Crok</div>
         <div className="markdown text-cax-text max-w-none">
-          {deferredContent ? (
-            <div dangerouslySetInnerHTML={{ __html: html }} />
-          ) : (
+          {!deferredContent ? (
             <TypingIndicator />
+          ) : streaming ? (
+            <div role="status" aria-label="応答中"><p className="whitespace-pre-wrap">{deferredContent}</p></div>
+          ) : (
+            <div dangerouslySetInnerHTML={{ __html: html }} />
           )}
         </div>
       </div>
@@ -44,9 +51,9 @@ const AssistantMessage = ({ content }: { content: string }) => {
   );
 };
 
-export const ChatMessage = ({ message }: Props) => {
+export const ChatMessage = ({ message, streaming = false }: Props) => {
   if (message.role === "user") {
     return <UserMessage content={message.content} />;
   }
-  return <AssistantMessage content={message.content} />;
+  return <AssistantMessage content={message.content} streaming={streaming} />;
 };

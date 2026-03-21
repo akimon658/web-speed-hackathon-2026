@@ -44,11 +44,18 @@ export function useSSE<T>(options: SSEOptions<T>): ReturnValues {
       const eventSource = new EventSource(url);
       eventSourceRef.current = eventSource;
 
+      let throttleTimer: ReturnType<typeof setTimeout> | null = null;
+
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data) as T;
 
         const isDone = options.onDone?.(data) ?? false;
         if (isDone) {
+          if (throttleTimer) {
+            clearTimeout(throttleTimer);
+            throttleTimer = null;
+          }
+          setContent(contentRef.current);
           options.onComplete?.(contentRef.current);
           stop();
           return;
@@ -56,7 +63,14 @@ export function useSSE<T>(options: SSEOptions<T>): ReturnValues {
 
         const newContent = options.onMessage(data, contentRef.current);
         contentRef.current = newContent;
-        setContent(newContent);
+
+        // Throttle UI updates to reduce main thread blocking from markdown rendering
+        if (!throttleTimer) {
+          throttleTimer = setTimeout(() => {
+            throttleTimer = null;
+            setContent(contentRef.current);
+          }, 150);
+        }
       };
 
       eventSource.onerror = (error) => {

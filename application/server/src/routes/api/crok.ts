@@ -34,16 +34,14 @@ crokRouter.get("/crok", async (req, res) => {
 
   let messageId = 0;
 
-  // Stream response in chunks for performance
-  const chunkSize = 10;
+  // Send response in large chunks to minimize SSE overhead
+  const chunkSize = 500;
   for (let i = 0; i < response.length; i += chunkSize) {
     if (res.closed) break;
 
     const chunk = response.slice(i, i + chunkSize);
     const data = JSON.stringify({ text: chunk, done: false });
     res.write(`event: message\nid: ${messageId++}\ndata: ${data}\n\n`);
-
-    await sleep(1);
   }
 
   if (!res.closed) {
