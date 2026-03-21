@@ -178,7 +178,7 @@ test.describe("Crok AIチャット - Markdownレンダリング（機能テス�
 
     const chatInput = page.getByPlaceholder("メッセージを入力...");
     const prompt =
-      "『走れメロス』って、冷笑系の"どうせ人なんか信じても無駄"に対する話なんだと思うんだけどどう？";
+      '『走れメロス』って、冷笑系の"どうせ人なんか信じても無駄"に対する話なんだと思うんだけどどう？';
     await chatInput.fill(prompt);
     await page.getByRole("button", { name: "送信" }).click();
 
